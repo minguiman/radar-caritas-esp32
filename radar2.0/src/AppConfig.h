@@ -14,9 +14,9 @@ inline constexpr int kSdSpiMosiPin = 1;
 inline constexpr uint8_t kSdCsExpanderPin = 3;
 inline constexpr uint8_t kLcdCsExpanderPin = 2;
 
-inline constexpr char kLocationLabel[] = "Default";
-inline constexpr double kOwnshipLat = 0.0;
-inline constexpr double kOwnshipLon = 0.0;
+inline constexpr char kLocationLabel[] = "Madrid";
+inline constexpr double kOwnshipLat = 40.4168;
+inline constexpr double kOwnshipLon = -3.7038;
 inline constexpr float kRangeKm = 80.0f;
 inline constexpr char kDefaultWifiSsid[] = "";
 inline constexpr char kDefaultWifiPassword[] = "";

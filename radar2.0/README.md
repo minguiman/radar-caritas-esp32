@@ -31,9 +31,9 @@ inline constexpr char kDefaultWifiSsid[] = "";
 inline constexpr char kDefaultWifiPassword[] = "";
 inline constexpr char kSetupApSsid[] = "Radar-Setup";
 inline constexpr char kSetupApPassword[] = "";
-inline constexpr char kLocationLabel[] = "Default";
-inline constexpr double kOwnshipLat = 0.0;
-inline constexpr double kOwnshipLon = 0.0;
+inline constexpr char kLocationLabel[] = "Madrid";
+inline constexpr double kOwnshipLat = 40.4168;
+inline constexpr double kOwnshipLon = -3.7038;
 ```
 
 El AP de configuracion inicial usa un SSID derivado del chip con formato `Radar-Setup-XXXXXX` y queda abierto por defecto para no publicar una contrasena embebida.
@@ -70,4 +70,4 @@ py -3 -m platformio run -e release -t upload --upload-port COM5
 
 - Las rutas personales se eliminaron del repo.
 - No se incluyen SSID/password reales.
-- La ubicacion por defecto es neutra y debe sustituirse durante el setup.
+- La ubicacion por defecto es Madrid y debe sustituirse durante el setup si quieres otra zona.

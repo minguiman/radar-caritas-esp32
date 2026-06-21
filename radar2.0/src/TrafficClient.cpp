@@ -664,7 +664,7 @@ bool fetchMetNoWeather(double latitude, double longitude, WeatherResult& result)
         return false;
     }
 
-    http.addHeader("User-Agent", "AdrianESP32Weather/1.0 adri88g@gmail.com");
+    http.addHeader("User-Agent", "RadarEsp32Weather/1.0");
     http.addHeader("Accept", "application/json");
     http.addHeader("Connection", "close");
     const int code = http.GET();
