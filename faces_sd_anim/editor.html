@@ -1,0 +1,1720 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RADAR Face Anim Editor</title>
+<style>
+:root {
+  --bg: #0b1020;
+  --panel: #11182f;
+  --panel-2: #172044;
+  --line: #2d3a68;
+  --text: #edf3ff;
+  --muted: #9eacd8;
+  --hot: #8b7cff;
+  --ok: #5ee0b5;
+  --bad: #ff6b8a;
+  --blue: #4db7ff;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  min-height: 100vh;
+  color: var(--text);
+  font-family: "Segoe UI", "Trebuchet MS", sans-serif;
+  background:
+    radial-gradient(circle at 12% -10%, rgba(77,183,255,.28), transparent 34rem),
+    radial-gradient(circle at 105% 28%, rgba(139,124,255,.22), transparent 32rem),
+    linear-gradient(135deg, #070b18, var(--bg));
+}
+button, input, select {
+  font: inherit;
+}
+button {
+  border: 1px solid var(--line);
+  background: linear-gradient(180deg, #202b56, #11182f);
+  color: var(--text);
+  border-radius: 12px;
+  padding: 10px 12px;
+  cursor: pointer;
+  transition: transform .12s ease, border-color .12s ease, background .12s ease;
+}
+button:hover { transform: translateY(-1px); border-color: var(--hot); }
+button.primary { background: linear-gradient(180deg, #7fc8ff, #6157f5); color: #061022; border-color: #9bd6ff; font-weight: 800; }
+button.warn { border-color: #7c3151; color: #ffdbe6; }
+button.ghost { background: transparent; }
+button:disabled { opacity: .45; cursor: not-allowed; transform: none; }
+input, select {
+  width: 100%;
+  border: 1px solid var(--line);
+  background: #070b18;
+  color: var(--text);
+  border-radius: 10px;
+  padding: 9px 10px;
+}
+label { display: grid; gap: 6px; color: var(--muted); font-size: .83rem; }
+.app { display: grid; grid-template-columns: 310px 1fr 330px; min-height: 100vh; }
+.side, .tools { background: rgba(18,16,12,.86); border-right: 1px solid var(--line); padding: 18px; }
+.tools { border-right: 0; border-left: 1px solid var(--line); }
+.brand { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 18px; }
+.brand h1 { margin: 0; font-size: 1.15rem; letter-spacing: .11em; text-transform: uppercase; }
+.brand small { color: var(--muted); }
+.actions { display: grid; gap: 10px; margin-bottom: 16px; }
+.hint {
+  border: 1px dashed var(--line);
+  border-radius: 16px;
+  padding: 12px;
+  color: var(--muted);
+  background: rgba(255,255,255,.025);
+  line-height: 1.35;
+}
+.list { display: grid; gap: 8px; margin-top: 14px; }
+.anim-item {
+  border: 1px solid var(--line);
+  background: rgba(255,255,255,.035);
+  border-radius: 14px;
+  padding: 10px;
+  cursor: pointer;
+}
+.anim-item.active { border-color: var(--hot); background: rgba(139,124,255,.16); }
+.anim-item b { display: block; font-size: .95rem; }
+.anim-item span { color: var(--muted); font-size: .82rem; }
+.main { padding: 20px; min-width: 0; }
+.hero {
+  display: grid;
+  grid-template-columns: minmax(280px, 520px) 1fr;
+  gap: 18px;
+  align-items: stretch;
+}
+.stage {
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  background: linear-gradient(180deg, #080806, #15120d);
+  min-height: 320px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  position: relative;
+}
+.stage:before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px);
+  background-size: 32px 32px;
+  opacity: .32;
+}
+.stage img {
+  max-width: 92%;
+  max-height: 92%;
+  image-rendering: pixelated;
+  border: 1px solid #000;
+  box-shadow: 0 24px 80px rgba(0,0,0,.6);
+  z-index: 1;
+}
+.empty { color: var(--muted); text-align: center; padding: 30px; z-index: 1; }
+.meta {
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  background: rgba(255,255,255,.035);
+  padding: 16px;
+  display: grid;
+  gap: 12px;
+  align-content: start;
+}
+.row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.triple { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+.toolbar { display: flex; gap: 10px; flex-wrap: wrap; margin: 18px 0 12px; }
+.frames {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(124px, 1fr));
+  gap: 12px;
+}
+.frame {
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: rgba(255,255,255,.035);
+  overflow: hidden;
+  cursor: grab;
+}
+.frame.selected { border-color: var(--blue); box-shadow: 0 0 0 2px rgba(99,199,255,.18); }
+.frame.dragging { opacity: .35; }
+.frame img { display: block; width: 100%; aspect-ratio: 2 / 1; object-fit: contain; background: #000; }
+.frame footer { padding: 8px; color: var(--muted); font-size: .78rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.status {
+  position: sticky;
+  bottom: 0;
+  margin-top: 14px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 10px;
+  background: rgba(8,7,5,.92);
+  color: var(--muted);
+  min-height: 42px;
+}
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 5px 8px;
+  color: var(--muted);
+  font-size: .78rem;
+}
+.category-grid { display: grid; gap: 8px; margin: 10px 0 14px; }
+.category-card {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: rgba(255,255,255,.035);
+  padding: 9px 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+}
+.category-card.active { border-color: var(--blue); background: rgba(99,199,255,.11); }
+.category-card strong { display: block; font-size: .9rem; }
+.category-card span { color: var(--muted); font-size: .76rem; }
+.category-card em { font-style: normal; color: var(--hot); font-weight: 800; }
+.category-board {
+  margin: 18px 0 14px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 12px;
+}
+.category-lane {
+  min-height: 150px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: linear-gradient(180deg, rgba(255,255,255,.045), rgba(255,255,255,.018));
+  padding: 10px;
+}
+.category-lane.drag-over {
+  border-color: var(--hot);
+  box-shadow: inset 0 0 0 2px rgba(139,124,255,.28), 0 0 28px rgba(77,183,255,.14);
+}
+.category-lane header {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.category-lane h3 {
+  margin: 0;
+  font-size: .86rem;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+.category-lane small { color: var(--muted); display: block; margin-top: 2px; }
+.category-lane .lane-count {
+  color: var(--hot);
+  font-weight: 900;
+}
+.anim-chip {
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 14px;
+  background: rgba(0,0,0,.24);
+  overflow: hidden;
+  margin: 8px 0;
+  cursor: grab;
+  position: relative;
+}
+.anim-chip.active {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 2px rgba(99,199,255,.18);
+}
+.anim-chip.dragging { opacity: .42; }
+.anim-chip img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 2 / 1;
+  object-fit: contain;
+  background: #000;
+}
+.anim-chip footer {
+  padding: 7px 8px;
+  color: var(--muted);
+  font-size: .76rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.anim-chip .delete-anim {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border-radius: 999px;
+  border-color: rgba(255,111,97,.58);
+  background: rgba(55,18,44,.82);
+  color: #ffdbe6;
+  font-weight: 900;
+  line-height: 1;
+  opacity: .9;
+}
+.anim-chip .delete-anim:hover {
+  border-color: var(--bad);
+  background: rgba(128,26,72,.94);
+}
+.lane-empty {
+  border: 1px dashed rgba(255,255,255,.14);
+  border-radius: 12px;
+  color: var(--muted);
+  padding: 14px 8px;
+  text-align: center;
+  font-size: .78rem;
+}
+.ok { color: var(--ok); }
+.bad { color: var(--bad); }
+.small { font-size: .82rem; color: var(--muted); line-height: 1.35; }
+.dropzone {
+  border: 1px dashed var(--line);
+  border-radius: 16px;
+  padding: 12px;
+  color: var(--muted);
+  text-align: center;
+}
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: none;
+  place-items: center;
+  padding: 24px;
+  background: rgba(3, 7, 18, .72);
+  backdrop-filter: blur(8px);
+}
+.modal-backdrop.open { display: grid; }
+.modal-card {
+  width: min(520px, 100%);
+  border: 1px solid var(--line);
+  border-radius: 22px;
+  padding: 22px;
+  background:
+    radial-gradient(circle at 10% 0%, rgba(77,183,255,.16), transparent 18rem),
+    linear-gradient(180deg, #172044, #0b1020);
+  box-shadow: 0 28px 90px rgba(0,0,0,.5);
+}
+.modal-card h2 {
+  margin: 0 0 8px;
+  font-size: 1.1rem;
+}
+.modal-card p {
+  margin: 0 0 18px;
+  color: var(--muted);
+  line-height: 1.45;
+}
+.modal-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.modal-actions .cancel { grid-column: 1 / -1; }
+@media (max-width: 1080px) {
+  .app { grid-template-columns: 1fr; }
+  .side, .tools { border: 0; border-bottom: 1px solid var(--line); }
+  .hero { grid-template-columns: 1fr; }
+  .modal-actions { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="side">
+    <div class="brand">
+      <div>
+        <h1>Face Anim</h1>
+        <small>Editor local .anim</small>
+      </div>
+      <span class="pill" id="countPill">0 anim</span>
+    </div>
+    <div class="actions">
+      <button class="primary" id="importFolderBtn">Importar carpeta</button>
+      <button id="importAnimationFolderBtn">Importar animacion carpeta</button>
+      <button id="loadLocalFacesBtn">Cargar copia local faces</button>
+      <button id="importFilesBtn">Anadir imagenes/GIF a seleccion</button>
+      <button id="newAnimBtn">Nueva animacion vacia</button>
+      <button class="primary" id="exportBtn">Generar carpeta faces</button>
+    </div>
+    <div class="hint">
+      Al abrir carga automaticamente la copia local <b>faces_sd_anim/faces</b>. Al exportar se abrira el selector para confirmar la carpeta; puedes elegir <b>faces_sd_anim</b>, la raiz de la SD o directamente una carpeta <b>faces</b>.
+    </div>
+    <div class="toolbar" style="margin:14px 0 0">
+      <button class="ghost" id="showAllBtn">Todas</button>
+    </div>
+    <div class="category-grid" id="categoryList"></div>
+    <div class="list" id="animList"></div>
+  </aside>
+
+  <main class="main">
+    <section class="hero">
+      <div class="stage" id="stage"><div class="empty">Importa o crea una animacion.</div></div>
+      <div class="meta">
+        <div class="row">
+          <label>Categoria
+            <input id="categoryInput" placeholder="normal">
+          </label>
+          <label>Nombre animacion
+            <input id="nameInput" placeholder="happy_1">
+          </label>
+        </div>
+        <div class="triple">
+          <label>FPS
+            <input id="fpsInput" type="number" min="1" max="60" value="10">
+          </label>
+          <label>Canvas W
+            <input id="canvasWInput" type="number" min="1" max="480" value="480">
+          </label>
+          <label>Canvas H
+            <input id="canvasHInput" type="number" min="1" max="480" value="480">
+          </label>
+        </div>
+        <div class="triple">
+          <label>Frame W
+            <input id="frameWInput" type="number" min="1" max="480">
+          </label>
+          <label>Frame H
+            <input id="frameHInput" type="number" min="1" max="480">
+          </label>
+          <label>Offset X
+            <input id="offsetXInput" type="number" min="0" max="480">
+          </label>
+        </div>
+        <div class="row">
+          <label>Offset Y
+            <input id="offsetYInput" type="number" min="0" max="480">
+          </label>
+          <label>Frame seleccionado
+            <input id="frameNameInput" placeholder="0.png">
+          </label>
+        </div>
+        <p class="small">
+          Limite real del firmware: cada frame debe caber en 480x480 pixeles. Solo se escalan al importar si superan ese limite.
+        </p>
+      </div>
+    </section>
+
+    <div class="toolbar">
+      <button id="playBtn">Reproducir</button>
+      <button id="stopBtn">Parar</button>
+      <button id="addBeforeBtn">Insertar antes</button>
+      <button id="addAfterBtn">Insertar despues</button>
+      <button id="deleteFrameBtn" class="warn">Eliminar frame</button>
+      <button id="duplicateFrameBtn">Duplicar frame</button>
+      <button id="deleteAnimBtn" class="warn">Eliminar animacion</button>
+    </div>
+
+    <section class="category-board" id="categoryBoard"></section>
+    <section class="frames" id="frames"></section>
+    <div class="status" id="status">Listo.</div>
+  </main>
+
+  <aside class="tools">
+    <h2 style="margin:0 0 10px;font-size:1rem;letter-spacing:.08em;text-transform:uppercase">Uso rapido</h2>
+    <p class="small">
+      1. Pulsa <b>Importar carpeta</b> y elige <b>faces</b> para cargar los .anim actuales, o una carpeta con imagenes.
+    </p>
+    <p class="small">
+      2. Selecciona una animacion, arrastra frames para reordenar, o usa insertar/eliminar.
+    </p>
+    <p class="small">
+      3. Pulsa <b>Generar carpeta faces</b>. Elige una carpeta de salida o la raiz de la SD.
+    </p>
+    <div class="dropzone" id="dropzone">Tambien puedes arrastrar imagenes aqui para anadirlas a la animacion seleccionada.</div>
+    <hr style="border:0;border-top:1px solid var(--line);margin:18px 0">
+    <h2 style="margin:0 0 10px;font-size:1rem;letter-spacing:.08em;text-transform:uppercase">Clasificacion</h2>
+    <label>Mover animacion seleccionada a
+      <select id="categoryPresetSelect"></select>
+    </label>
+    <button id="moveCategoryBtn" style="margin-top:10px;width:100%">Aplicar categoria</button>
+    <p class="small">
+      La carpeta exportada sale como <b>faces/categoria/animacion.anim</b>. Usa estas categorias si quieres que el firmware las encuentre en sus eventos actuales.
+    </p>
+    <label><input type="checkbox" id="cleanExportInput" checked style="width:auto;margin-right:8px">Limpiar faces antes de exportar</label>
+    <p class="small">
+      Si exportas a la SD, deja solo <b>faces</b>. El firmware actual no necesita JPG, PNG, RGB565 ni manifest en la SD.
+    </p>
+  </aside>
+</div>
+
+<div class="modal-backdrop" id="importModeDialog" role="dialog" aria-modal="true" aria-labelledby="importModeTitle">
+  <div class="modal-card">
+    <h2 id="importModeTitle">Importar carpeta</h2>
+    <p id="importModeText"></p>
+    <div class="modal-actions">
+      <button class="primary" id="importMergeBtn" type="button">Mezclar con las actuales</button>
+      <button id="importReplaceBtn" type="button">Solo usar esta carpeta</button>
+      <button class="ghost cancel" id="importCancelBtn" type="button">Cancelar importacion</button>
+    </div>
+  </div>
+</div>
+
+<input id="fileInput" type="file" accept="image/*,.bmp,.webp,.gif,.anim" multiple hidden>
+
+<script>
+"use strict";
+
+const MAGIC = "R2ANIM01";
+const HEADER_BYTES = 28;
+const ENTRY_BYTES = 20;
+const DEFAULT_CANVAS_W = 480;
+const DEFAULT_CANVAS_H = 480;
+const MAX_PIXELS = 480 * 480;
+
+function fitWithinFirmwareLimit(width, height) {
+  const scale = Math.min(1, 480 / width, 480 / height);
+  return {
+    width: Math.max(1, Math.round(width * scale)),
+    height: Math.max(1, Math.round(height * scale))
+  };
+}
+const CATEGORY_PRESETS = [
+  { id: "normal", label: "Normal / reposo", note: "idle aleatorio" },
+  { id: "sleep", label: "Dormir", note: "brillo minimo sin timers" },
+  { id: "focus", label: "Focus", note: "pomodoro activo" },
+  { id: "agua", label: "Agua", note: "recordatorio beber" },
+  { id: "ojos", label: "Ojos / descanso", note: "vista y estirar" },
+  { id: "stop", label: "Stop / enfadado", note: "pausa focus" },
+  { id: "break", label: "Descanso", note: "break corto" },
+  { id: "celebrar", label: "Celebrar", note: "fin completado" },
+  { id: "llorar", label: "Llorar", note: "reset/cancelar" },
+  { id: "especial", label: "Especial", note: "eventos raros" }
+];
+
+const state = {
+  animations: [],
+  selectedAnim: null,
+  selectedFrame: 0,
+  playTimer: null,
+  insertMode: "after",
+  categoryFilter: ""
+};
+
+const EXPORT_PICKER_ID = "faces-export-root";
+const EXPORT_DB_NAME = "face-anim-editor";
+const EXPORT_DB_STORE = "handles";
+const EXPORT_HANDLE_KEY = "last-export-root";
+
+const $ = (id) => document.getElementById(id);
+const els = {
+  countPill: $("countPill"),
+  animList: $("animList"),
+  categoryList: $("categoryList"),
+  categoryBoard: $("categoryBoard"),
+  stage: $("stage"),
+  frames: $("frames"),
+  status: $("status"),
+  category: $("categoryInput"),
+  name: $("nameInput"),
+  fps: $("fpsInput"),
+  canvasW: $("canvasWInput"),
+  canvasH: $("canvasHInput"),
+  frameW: $("frameWInput"),
+  frameH: $("frameHInput"),
+  offsetX: $("offsetXInput"),
+  offsetY: $("offsetYInput"),
+  frameName: $("frameNameInput"),
+  fileInput: $("fileInput"),
+  cleanExport: $("cleanExportInput"),
+  categoryPreset: $("categoryPresetSelect"),
+  importModeDialog: $("importModeDialog"),
+  importModeText: $("importModeText"),
+  importMerge: $("importMergeBtn"),
+  importReplace: $("importReplaceBtn"),
+  importCancel: $("importCancelBtn")
+};
+
+function setStatus(text, type = "") {
+  els.status.innerHTML = type ? `<span class="${type}">${escapeHtml(text)}</span>` : escapeHtml(text);
+}
+
+function openEditorDb() {
+  return new Promise((resolve, reject) => {
+    if (!window.indexedDB) {
+      resolve(null);
+      return;
+    }
+    const request = indexedDB.open(EXPORT_DB_NAME, 1);
+    request.onupgradeneeded = () => {
+      request.result.createObjectStore(EXPORT_DB_STORE);
+    };
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+async function readStoredDirectoryHandle() {
+  const db = await openEditorDb();
+  if (!db) return null;
+  return new Promise((resolve) => {
+    const tx = db.transaction(EXPORT_DB_STORE, "readonly");
+    const request = tx.objectStore(EXPORT_DB_STORE).get(EXPORT_HANDLE_KEY);
+    request.onsuccess = () => resolve(request.result || null);
+    request.onerror = () => resolve(null);
+  });
+}
+
+async function writeStoredDirectoryHandle(handle) {
+  const db = await openEditorDb();
+  if (!db) return;
+  await new Promise((resolve) => {
+    const tx = db.transaction(EXPORT_DB_STORE, "readwrite");
+    tx.objectStore(EXPORT_DB_STORE).put(handle, EXPORT_HANDLE_KEY);
+    tx.oncomplete = resolve;
+    tx.onerror = resolve;
+  });
+}
+
+async function pickExportRoot() {
+  const options = { mode: "readwrite", id: EXPORT_PICKER_ID };
+  try {
+    const stored = await readStoredDirectoryHandle();
+    if (stored) options.startIn = stored;
+  } catch (_) {}
+  const handle = await window.showDirectoryPicker(options);
+  await writeStoredDirectoryHandle(handle);
+  return handle;
+}
+
+function escapeHtml(value) {
+  return String(value).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+
+function safeName(value) {
+  return String(value || "anim").trim().replace(/[\\/]+/g, "_").replace(/[^A-Za-z0-9_.-]+/g, "_").replace(/^_+|_+$/g, "") || "anim";
+}
+
+function selectedAnimation() {
+  return state.animations.find((anim) => anim.id === state.selectedAnim) || null;
+}
+
+function createAnimation(category = "normal", name = "animacion", frames = [], canvasW = DEFAULT_CANVAS_W, canvasH = DEFAULT_CANVAS_H, fps = 10) {
+  const anim = {
+    id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random()),
+    category: safeName(category),
+    name: safeName(name),
+    frames,
+    canvasW,
+    canvasH,
+    fps
+  };
+  state.animations.push(anim);
+  state.selectedAnim = anim.id;
+  state.selectedFrame = 0;
+  return anim;
+}
+
+function clearEditorAnimations() {
+  stopPlayback();
+  state.animations = [];
+  state.selectedAnim = null;
+  state.selectedFrame = 0;
+  state.categoryFilter = "";
+}
+
+function initCategoryPresetSelect() {
+  els.categoryPreset.innerHTML = "";
+  for (const preset of CATEGORY_PRESETS) {
+    const option = document.createElement("option");
+    option.value = preset.id;
+    option.textContent = `${preset.label} (${preset.id})`;
+    els.categoryPreset.appendChild(option);
+  }
+}
+
+function render() {
+  const anim = selectedAnimation();
+  els.countPill.textContent = `${state.animations.length} anim`;
+  renderCategoryList();
+  renderCategoryBoard();
+  renderAnimationList();
+  renderMeta(anim);
+  renderFrames(anim);
+  renderStage(anim);
+}
+
+function categoryLabel(category) {
+  const preset = CATEGORY_PRESETS.find((item) => item.id === category);
+  return preset ? preset.label : category;
+}
+
+function collectCategories() {
+  const categories = new Map();
+  for (const preset of CATEGORY_PRESETS) categories.set(preset.id, { ...preset, count: 0 });
+  for (const anim of state.animations) {
+    if (!categories.has(anim.category)) categories.set(anim.category, { id: anim.category, label: anim.category, note: "personalizada", count: 0 });
+    categories.get(anim.category).count++;
+  }
+  return [...categories.values()];
+}
+
+function renderCategoryList() {
+  els.categoryList.innerHTML = "";
+  const categories = collectCategories();
+  for (const item of categories.values()) {
+    const card = document.createElement("div");
+    card.className = `category-card${state.categoryFilter === item.id ? " active" : ""}`;
+    card.innerHTML = `<div><strong>${escapeHtml(item.label)}</strong><span>${escapeHtml(item.id)} - ${escapeHtml(item.note)}</span></div><em>${item.count}</em>`;
+    card.onclick = () => {
+      state.categoryFilter = state.categoryFilter === item.id ? "" : item.id;
+      render();
+    };
+    els.categoryList.appendChild(card);
+  }
+}
+
+function selectAnimation(animId) {
+  state.selectedAnim = animId;
+  state.selectedFrame = 0;
+  stopPlayback();
+}
+
+function moveAnimationToCategory(animId, category) {
+  const anim = state.animations.find((item) => item.id === animId);
+  if (!anim) return;
+  const nextCategory = safeName(category);
+  if (anim.category === nextCategory) return;
+  anim.category = nextCategory;
+  state.selectedAnim = anim.id;
+  state.selectedFrame = 0;
+  state.categoryFilter = "";
+  setStatus(`Movida ${anim.name} a faces/${nextCategory}/`, "ok");
+  render();
+}
+
+function representativeFrame(anim) {
+  if (!anim || !anim.frames.length) return null;
+  return anim.frames[Math.floor(anim.frames.length / 2)];
+}
+
+function deleteAnimation(animId) {
+  const index = state.animations.findIndex((item) => item.id === animId);
+  if (index < 0) return;
+  const removed = state.animations[index];
+  const ok = confirm(`Eliminar la animacion "${removed.category}/${removed.name}" del editor?\n\nNo se borra del disco hasta que exportes faces con limpieza activada.`);
+  if (!ok) return;
+  state.animations.splice(index, 1);
+  if (state.selectedAnim === animId) {
+    const next = state.animations[Math.min(index, state.animations.length - 1)];
+    state.selectedAnim = next ? next.id : null;
+    state.selectedFrame = 0;
+  }
+  setStatus(`Eliminada ${removed.category}/${removed.name}. Exporta faces para aplicar el cambio.`, "ok");
+  render();
+}
+
+function renderCategoryBoard() {
+  els.categoryBoard.innerHTML = "";
+  const categories = collectCategories();
+  for (const category of categories) {
+    const lane = document.createElement("section");
+    lane.className = "category-lane";
+    lane.dataset.category = category.id;
+    lane.innerHTML = `<header><div><h3>${escapeHtml(category.label)}</h3><small>${escapeHtml(category.id)} - ${escapeHtml(category.note)}</small></div><span class="lane-count">${category.count}</span></header>`;
+    lane.ondragover = (ev) => {
+      if (Array.from(ev.dataTransfer.types).includes("application/x-radar-anim-id")) {
+        ev.preventDefault();
+        lane.classList.add("drag-over");
+      }
+    };
+    lane.ondragleave = () => lane.classList.remove("drag-over");
+    lane.ondrop = (ev) => {
+      const animId = ev.dataTransfer.getData("application/x-radar-anim-id");
+      if (!animId) return;
+      ev.preventDefault();
+      lane.classList.remove("drag-over");
+      moveAnimationToCategory(animId, category.id);
+    };
+
+    const laneAnims = state.animations
+      .filter((anim) => anim.category === category.id)
+      .sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: "base" }));
+    for (const anim of laneAnims) {
+      const chip = document.createElement("article");
+      chip.className = `anim-chip${anim.id === state.selectedAnim ? " active" : ""}`;
+      chip.draggable = true;
+      chip.dataset.animId = anim.id;
+      const preview = representativeFrame(anim)?.previewUrl || "";
+      chip.innerHTML = `<button class="delete-anim" title="Eliminar animacion" type="button">x</button>${preview ? `<img src="${preview}" alt="">` : ""}<footer>${escapeHtml(anim.name)} - ${anim.frames.length} frames</footer>`;
+      chip.onclick = () => {
+        selectAnimation(anim.id);
+        render();
+      };
+      chip.querySelector(".delete-anim").onclick = (ev) => {
+        ev.stopPropagation();
+        deleteAnimation(anim.id);
+      };
+      chip.querySelector(".delete-anim").ondragstart = (ev) => {
+        ev.preventDefault();
+        ev.stopPropagation();
+      };
+      chip.ondragstart = (ev) => {
+        chip.classList.add("dragging");
+        ev.dataTransfer.setData("application/x-radar-anim-id", anim.id);
+        ev.dataTransfer.effectAllowed = "move";
+      };
+      chip.ondragend = () => chip.classList.remove("dragging");
+      lane.appendChild(chip);
+    }
+    if (!laneAnims.length) {
+      const empty = document.createElement("div");
+      empty.className = "lane-empty";
+      empty.textContent = "Suelta aqui una expresion";
+      lane.appendChild(empty);
+    }
+    els.categoryBoard.appendChild(lane);
+  }
+}
+
+function renderAnimationList() {
+  els.animList.innerHTML = "";
+  const visible = state.categoryFilter
+    ? state.animations.filter((anim) => anim.category === state.categoryFilter)
+    : state.animations;
+  for (const anim of visible) {
+    const item = document.createElement("div");
+    item.className = `anim-item${anim.id === state.selectedAnim ? " active" : ""}`;
+    item.innerHTML = `<b>${escapeHtml(anim.category)}/${escapeHtml(anim.name)}</b><span>${escapeHtml(categoryLabel(anim.category))} - ${anim.frames.length} frames - ${anim.canvasW}x${anim.canvasH} - ${anim.fps} fps</span>`;
+    item.onclick = () => {
+      state.selectedAnim = anim.id;
+      state.selectedFrame = 0;
+      stopPlayback();
+      render();
+    };
+    els.animList.appendChild(item);
+  }
+  if (!visible.length) {
+    els.animList.innerHTML = `<div class="hint">No hay animaciones en esta categoria.</div>`;
+  }
+}
+
+function renderMeta(anim) {
+  const disabled = !anim;
+  for (const input of [els.category, els.name, els.fps, els.canvasW, els.canvasH, els.frameW, els.frameH, els.offsetX, els.offsetY, els.frameName, els.categoryPreset]) {
+    input.disabled = disabled;
+  }
+  if (!anim) {
+    els.category.value = "";
+    els.name.value = "";
+    els.fps.value = 10;
+    els.canvasW.value = DEFAULT_CANVAS_W;
+    els.canvasH.value = DEFAULT_CANVAS_H;
+    els.frameW.value = "";
+    els.frameH.value = "";
+    els.offsetX.value = "";
+    els.offsetY.value = "";
+    els.frameName.value = "";
+    els.categoryPreset.value = "normal";
+    return;
+  }
+  els.category.value = anim.category;
+  els.categoryPreset.value = CATEGORY_PRESETS.some((item) => item.id === anim.category) ? anim.category : "normal";
+  els.name.value = anim.name;
+  els.fps.value = anim.fps;
+  els.canvasW.value = anim.canvasW;
+  els.canvasH.value = anim.canvasH;
+  const frame = anim.frames[state.selectedFrame];
+  els.frameW.value = frame ? frame.width : "";
+  els.frameH.value = frame ? frame.height : "";
+  els.offsetX.value = frame ? frame.offsetX : "";
+  els.offsetY.value = frame ? frame.offsetY : "";
+  els.frameName.value = frame ? frame.name : "";
+}
+
+function renderFrames(anim) {
+  els.frames.innerHTML = "";
+  if (!anim) return;
+  anim.frames.forEach((frame, index) => {
+    const card = document.createElement("article");
+    card.className = `frame${index === state.selectedFrame ? " selected" : ""}`;
+    card.draggable = true;
+    card.dataset.index = index;
+    card.innerHTML = `<img src="${frame.previewUrl}" alt=""><footer>${index}: ${escapeHtml(frame.name)}</footer>`;
+    card.onclick = () => {
+      state.selectedFrame = index;
+      render();
+    };
+    card.ondragstart = (ev) => {
+      card.classList.add("dragging");
+      ev.dataTransfer.setData("text/plain", String(index));
+    };
+    card.ondragend = () => card.classList.remove("dragging");
+    card.ondragover = (ev) => ev.preventDefault();
+    card.ondrop = (ev) => {
+      ev.preventDefault();
+      const from = Number(ev.dataTransfer.getData("text/plain"));
+      const to = Number(card.dataset.index);
+      reorderFrame(anim, from, to);
+    };
+    els.frames.appendChild(card);
+  });
+}
+
+function renderStage(anim) {
+  const frame = anim && anim.frames[state.selectedFrame];
+  if (!frame) {
+    els.stage.innerHTML = `<div class="empty">${anim ? "Esta animacion no tiene frames." : "Importa o crea una animacion."}</div>`;
+    return;
+  }
+  els.stage.innerHTML = `<img src="${frame.previewUrl}" alt="">`;
+}
+
+function reorderFrame(anim, from, to) {
+  if (!anim || from === to || from < 0 || to < 0 || from >= anim.frames.length || to >= anim.frames.length) return;
+  const [frame] = anim.frames.splice(from, 1);
+  anim.frames.splice(to, 0, frame);
+  state.selectedFrame = to;
+  render();
+}
+
+function rgb888To565(r, g, b) {
+  return ((r & 0xF8) << 8) | ((g & 0xFC) << 3) | (b >> 3);
+}
+
+function rgb565ToRgb(value) {
+  return [
+    ((value >> 11) & 0x1F) << 3,
+    ((value >> 5) & 0x3F) << 2,
+    (value & 0x1F) << 3
+  ];
+}
+
+function imageDataFromRgb565(bytes, width, height) {
+  const imageData = new ImageData(width, height);
+  let out = 0;
+  for (let i = 0; i < bytes.length; i += 2) {
+    const value = bytes[i] | (bytes[i + 1] << 8);
+    const [r, g, b] = rgb565ToRgb(value);
+    imageData.data[out++] = r;
+    imageData.data[out++] = g;
+    imageData.data[out++] = b;
+    imageData.data[out++] = 255;
+  }
+  return imageData;
+}
+
+function makePreview(frame, canvasW, canvasH) {
+  const main = document.createElement("canvas");
+  main.width = canvasW;
+  main.height = canvasH;
+  const ctx = main.getContext("2d", { willReadFrequently: true });
+  ctx.fillStyle = "#000";
+  ctx.fillRect(0, 0, canvasW, canvasH);
+  const crop = document.createElement("canvas");
+  crop.width = frame.width;
+  crop.height = frame.height;
+  crop.getContext("2d").putImageData(imageDataFromRgb565(frame.pixels, frame.width, frame.height), 0, 0);
+  ctx.drawImage(crop, frame.offsetX, frame.offsetY);
+  return main.toDataURL("image/png");
+}
+
+async function bitmapFromFile(file) {
+  if ("createImageBitmap" in window) return await createImageBitmap(file);
+  return await new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = reject;
+    img.src = URL.createObjectURL(file);
+  });
+}
+
+async function frameFromImageFile(file, canvasW, canvasH) {
+  const bitmap = await bitmapFromFile(file);
+  const fitted = fitWithinFirmwareLimit(bitmap.width, bitmap.height);
+  const width = fitted.width;
+  const height = fitted.height;
+  if (width * height > MAX_PIXELS) throw new Error(`${file.name}: frame demasiado grande`);
+
+  const temp = document.createElement("canvas");
+  temp.width = width;
+  temp.height = height;
+  const tctx = temp.getContext("2d", { willReadFrequently: true });
+  tctx.fillStyle = "#000";
+  tctx.fillRect(0, 0, width, height);
+  tctx.drawImage(bitmap, 0, 0, width, height);
+  const data = tctx.getImageData(0, 0, width, height);
+
+  let minX = width, minY = height, maxX = -1, maxY = -1;
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const p = (y * width + x) * 4;
+      const alpha = data.data[p + 3];
+      const nonBlack = data.data[p] !== 0 || data.data[p + 1] !== 0 || data.data[p + 2] !== 0;
+      if (alpha !== 0 && nonBlack) {
+        if (x < minX) minX = x;
+        if (y < minY) minY = y;
+        if (x > maxX) maxX = x;
+        if (y > maxY) maxY = y;
+      }
+    }
+  }
+  if (maxX < minX || maxY < minY) {
+    minX = 0; minY = 0; maxX = Math.min(0, width - 1); maxY = Math.min(0, height - 1);
+  }
+
+  const cropW = maxX - minX + 1;
+  const cropH = maxY - minY + 1;
+  const pixels = new Uint8Array(cropW * cropH * 2);
+  let out = 0;
+  for (let y = minY; y <= maxY; y++) {
+    for (let x = minX; x <= maxX; x++) {
+      const p = (y * width + x) * 4;
+      const value = rgb888To565(data.data[p], data.data[p + 1], data.data[p + 2]);
+      pixels[out++] = value & 0xFF;
+      pixels[out++] = value >> 8;
+    }
+  }
+  const frame = {
+    name: file.name,
+    width: cropW,
+    height: cropH,
+    offsetX: Math.max(0, Math.floor((canvasW - width) / 2) + minX),
+    offsetY: Math.max(0, Math.floor((canvasH - height) / 2) + minY),
+    pixels,
+    previewUrl: ""
+  };
+  frame.previewUrl = makePreview(frame, canvasW, canvasH);
+  return frame;
+}
+
+function frameFromCanvas(sourceCanvas, name, canvasW, canvasH) {
+  const fitted = fitWithinFirmwareLimit(sourceCanvas.width, sourceCanvas.height);
+  const width = fitted.width;
+  const height = fitted.height;
+  const temp = document.createElement("canvas");
+  temp.width = width;
+  temp.height = height;
+  const tctx = temp.getContext("2d", { willReadFrequently: true });
+  tctx.fillStyle = "#000";
+  tctx.fillRect(0, 0, width, height);
+  tctx.drawImage(sourceCanvas, 0, 0, width, height);
+  const data = tctx.getImageData(0, 0, width, height);
+
+  let minX = width, minY = height, maxX = -1, maxY = -1;
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const p = (y * width + x) * 4;
+      const nonBlack = data.data[p] !== 0 || data.data[p + 1] !== 0 || data.data[p + 2] !== 0;
+      if (data.data[p + 3] !== 0 && nonBlack) {
+        if (x < minX) minX = x;
+        if (y < minY) minY = y;
+        if (x > maxX) maxX = x;
+        if (y > maxY) maxY = y;
+      }
+    }
+  }
+  if (maxX < minX || maxY < minY) {
+    minX = 0; minY = 0; maxX = 0; maxY = 0;
+  }
+  const cropW = maxX - minX + 1;
+  const cropH = maxY - minY + 1;
+  const pixels = new Uint8Array(cropW * cropH * 2);
+  let out = 0;
+  for (let y = minY; y <= maxY; y++) {
+    for (let x = minX; x <= maxX; x++) {
+      const p = (y * width + x) * 4;
+      const value = rgb888To565(data.data[p], data.data[p + 1], data.data[p + 2]);
+      pixels[out++] = value & 0xFF;
+      pixels[out++] = value >> 8;
+    }
+  }
+  const frame = {
+    name,
+    width: cropW,
+    height: cropH,
+    offsetX: Math.max(0, Math.floor((canvasW - width) / 2) + minX),
+    offsetY: Math.max(0, Math.floor((canvasH - height) / 2) + minY),
+    pixels,
+    previewUrl: ""
+  };
+  frame.previewUrl = makePreview(frame, canvasW, canvasH);
+  return frame;
+}
+
+function encodeRleRgb565(bytes) {
+  const runs = [];
+  let previous = null;
+  let count = 0;
+  for (let i = 0; i < bytes.length; i += 2) {
+    const value = bytes[i] | (bytes[i + 1] << 8);
+    if (previous === null) {
+      previous = value;
+      count = 1;
+    } else if (value === previous && count < 65535) {
+      count++;
+    } else {
+      runs.push(count & 0xFF, count >> 8, previous & 0xFF, previous >> 8);
+      previous = value;
+      count = 1;
+    }
+  }
+  if (previous !== null) runs.push(count & 0xFF, count >> 8, previous & 0xFF, previous >> 8);
+  return new Uint8Array(runs);
+}
+
+function readGifSubBlocks(bytes, pos) {
+  const out = [];
+  while (pos < bytes.length) {
+    const size = bytes[pos++];
+    if (size === 0) break;
+    for (let i = 0; i < size; i++) out.push(bytes[pos++]);
+  }
+  return { data: new Uint8Array(out), pos };
+}
+
+function readGifColorTable(bytes, pos, count) {
+  const table = [];
+  for (let i = 0; i < count; i++) {
+    table.push([bytes[pos++], bytes[pos++], bytes[pos++]]);
+  }
+  return { table, pos };
+}
+
+function gifCodeReader(data) {
+  let bit = 0;
+  return function readCode(size) {
+    let code = 0;
+    for (let i = 0; i < size; i++) {
+      const byte = data[bit >> 3] || 0;
+      if (byte & (1 << (bit & 7))) code |= 1 << i;
+      bit++;
+    }
+    return code;
+  };
+}
+
+function lzwDecodeGif(minCodeSize, data, expectedPixels) {
+  const clearCode = 1 << minCodeSize;
+  const endCode = clearCode + 1;
+  let codeSize = minCodeSize + 1;
+  let nextCode = endCode + 1;
+  let dict = [];
+  const reset = () => {
+    dict = [];
+    for (let i = 0; i < clearCode; i++) dict[i] = [i];
+    dict[clearCode] = [];
+    dict[endCode] = null;
+    codeSize = minCodeSize + 1;
+    nextCode = endCode + 1;
+  };
+  reset();
+
+  const readCode = gifCodeReader(data);
+  const out = [];
+  let previous = null;
+  while (out.length < expectedPixels) {
+    const code = readCode(codeSize);
+    if (code === clearCode) {
+      reset();
+      previous = null;
+      continue;
+    }
+    if (code === endCode) break;
+
+    let entry;
+    if (dict[code]) {
+      entry = dict[code].slice();
+    } else if (code === nextCode && previous) {
+      entry = previous.concat(previous[0]);
+    } else {
+      break;
+    }
+    out.push(...entry);
+    if (previous) {
+      dict[nextCode++] = previous.concat(entry[0]);
+      if (nextCode === (1 << codeSize) && codeSize < 12) codeSize++;
+    }
+    previous = entry;
+  }
+  return out.slice(0, expectedPixels);
+}
+
+function gifRows(height, interlaced) {
+  if (!interlaced) return Array.from({ length: height }, (_, i) => i);
+  const rows = [];
+  for (const [start, step] of [[0, 8], [4, 8], [2, 4], [1, 2]]) {
+    for (let y = start; y < height; y += step) rows.push(y);
+  }
+  return rows;
+}
+
+async function framesFromGifFile(file, canvasW, canvasH) {
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  const header = String.fromCharCode(...bytes.slice(0, 6));
+  if (header !== "GIF87a" && header !== "GIF89a") throw new Error(`${file.name}: GIF no valido`);
+  let pos = 6;
+  const width = bytes[pos] | (bytes[pos + 1] << 8); pos += 2;
+  const height = bytes[pos] | (bytes[pos + 1] << 8); pos += 2;
+  const packed = bytes[pos++];
+  pos += 2;
+  let globalTable = [];
+  if (packed & 0x80) {
+    const size = 1 << ((packed & 0x07) + 1);
+    const result = readGifColorTable(bytes, pos, size);
+    globalTable = result.table;
+    pos = result.pos;
+  }
+
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext("2d", { willReadFrequently: true });
+  ctx.clearRect(0, 0, width, height);
+  let gce = { disposal: 0, transparent: false, transparentIndex: 0, delay: 10 };
+  const frames = [];
+
+  while (pos < bytes.length) {
+    const block = bytes[pos++];
+    if (block === 0x3B) break;
+    if (block === 0x21) {
+      const label = bytes[pos++];
+      if (label === 0xF9) {
+        const size = bytes[pos++];
+        const p = bytes[pos++];
+        const delay = bytes[pos] | (bytes[pos + 1] << 8); pos += 2;
+        const transparentIndex = bytes[pos++];
+        pos++;
+        if (size !== 4) throw new Error(`${file.name}: extension GIF no valida`);
+        gce = {
+          disposal: (p >> 2) & 0x07,
+          transparent: (p & 1) !== 0,
+          transparentIndex,
+          delay
+        };
+      } else {
+        const skipped = readGifSubBlocks(bytes, pos);
+        pos = skipped.pos;
+      }
+      continue;
+    }
+    if (block !== 0x2C) break;
+
+    const left = bytes[pos] | (bytes[pos + 1] << 8); pos += 2;
+    const top = bytes[pos] | (bytes[pos + 1] << 8); pos += 2;
+    const frameW = bytes[pos] | (bytes[pos + 1] << 8); pos += 2;
+    const frameH = bytes[pos] | (bytes[pos + 1] << 8); pos += 2;
+    const imagePacked = bytes[pos++];
+    const hasLocalTable = (imagePacked & 0x80) !== 0;
+    const interlaced = (imagePacked & 0x40) !== 0;
+    let colorTable = globalTable;
+    if (hasLocalTable) {
+      const size = 1 << ((imagePacked & 0x07) + 1);
+      const result = readGifColorTable(bytes, pos, size);
+      colorTable = result.table;
+      pos = result.pos;
+    }
+    const minCodeSize = bytes[pos++];
+    const imageData = readGifSubBlocks(bytes, pos);
+    pos = imageData.pos;
+
+    const previousCanvas = gce.disposal === 3 ? ctx.getImageData(0, 0, width, height) : null;
+    const image = ctx.getImageData(0, 0, width, height);
+    const indices = lzwDecodeGif(minCodeSize, imageData.data, frameW * frameH);
+    const rows = gifRows(frameH, interlaced);
+    let src = 0;
+    for (const y of rows) {
+      for (let x = 0; x < frameW; x++) {
+        const index = indices[src++];
+        if (gce.transparent && index === gce.transparentIndex) continue;
+        const color = colorTable[index] || [0, 0, 0];
+        const dstX = left + x;
+        const dstY = top + y;
+        if (dstX < 0 || dstY < 0 || dstX >= width || dstY >= height) continue;
+        const p = (dstY * width + dstX) * 4;
+        image.data[p] = color[0];
+        image.data[p + 1] = color[1];
+        image.data[p + 2] = color[2];
+        image.data[p + 3] = 255;
+      }
+    }
+    ctx.putImageData(image, 0, 0);
+    frames.push(frameFromCanvas(canvas, `${file.name}_${String(frames.length).padStart(3, "0")}`, canvasW, canvasH));
+
+    if (gce.disposal === 2) {
+      ctx.clearRect(left, top, frameW, frameH);
+    } else if (gce.disposal === 3 && previousCanvas) {
+      ctx.putImageData(previousCanvas, 0, 0);
+    }
+    gce = { disposal: 0, transparent: false, transparentIndex: 0, delay: 10 };
+  }
+  if (!frames.length) throw new Error(`${file.name}: no se han podido extraer frames GIF`);
+  return frames;
+}
+
+async function framesFromAnyImageFile(file, canvasW, canvasH) {
+  if (/\.gif$/i.test(file.name)) {
+    return await framesFromGifFile(file, canvasW, canvasH);
+  }
+  return [await frameFromImageFile(file, canvasW, canvasH)];
+}
+
+function decodeAnimFile(file, category, name) {
+  return file.arrayBuffer().then((buffer) => {
+    const view = new DataView(buffer);
+    const magic = String.fromCharCode(...new Uint8Array(buffer, 0, 8));
+    if (magic !== MAGIC) throw new Error(`${file.name}: magic no valido`);
+    const headerBytes = view.getUint16(8, true);
+    const flags = view.getUint16(10, true);
+    const canvasW = view.getUint16(12, true);
+    const canvasH = view.getUint16(14, true);
+    const fps = view.getUint16(16, true) || 10;
+    const frameCount = view.getUint16(18, true);
+    const tableOffset = view.getUint32(20, true);
+    if (headerBytes < HEADER_BYTES || (flags & 1) === 0 || !canvasW || !canvasH || !frameCount) {
+      throw new Error(`${file.name}: cabecera .anim no valida`);
+    }
+    const frames = [];
+    for (let i = 0; i < frameCount; i++) {
+      const pos = tableOffset + i * ENTRY_BYTES;
+      const dataOffset = view.getUint32(pos, true);
+      const dataSize = view.getUint32(pos + 4, true);
+      const width = view.getUint16(pos + 8, true);
+      const height = view.getUint16(pos + 10, true);
+      const offsetX = view.getUint16(pos + 12, true);
+      const offsetY = view.getUint16(pos + 14, true);
+      const pixels = new Uint8Array(width * height * 2);
+      let out = 0;
+      for (let p = dataOffset; p < dataOffset + dataSize; p += 4) {
+        const count = view.getUint16(p, true);
+        const value = view.getUint16(p + 2, true);
+        for (let c = 0; c < count; c++) {
+          pixels[out++] = value & 0xFF;
+          pixels[out++] = value >> 8;
+        }
+      }
+      const frame = { name: `${i}`, width, height, offsetX, offsetY, pixels, previewUrl: "" };
+      frame.previewUrl = makePreview(frame, canvasW, canvasH);
+      frames.push(frame);
+    }
+    return createAnimation(category, name, frames, canvasW, canvasH, fps);
+  });
+}
+
+function buildAnimBlob(anim) {
+  const frames = anim.frames;
+  if (!frames.length) throw new Error(`${anim.category}/${anim.name}: sin frames`);
+  const payloads = frames.map((frame) => encodeRleRgb565(frame.pixels));
+  const dataOffset = HEADER_BYTES + frames.length * ENTRY_BYTES;
+  const totalPayload = payloads.reduce((sum, payload) => sum + payload.length, 0);
+  const buffer = new ArrayBuffer(dataOffset + totalPayload);
+  const bytes = new Uint8Array(buffer);
+  const view = new DataView(buffer);
+  for (let i = 0; i < MAGIC.length; i++) bytes[i] = MAGIC.charCodeAt(i);
+  view.setUint16(8, HEADER_BYTES, true);
+  view.setUint16(10, 1, true);
+  view.setUint16(12, anim.canvasW, true);
+  view.setUint16(14, anim.canvasH, true);
+  view.setUint16(16, Math.max(1, Math.min(60, Number(anim.fps) || 10)), true);
+  view.setUint16(18, frames.length, true);
+  view.setUint32(20, HEADER_BYTES, true);
+  view.setUint32(24, 0, true);
+
+  let cursor = dataOffset;
+  const delay = Math.max(1, Math.round(1000 / Math.max(1, Number(anim.fps) || 10)));
+  frames.forEach((frame, index) => {
+    const pos = HEADER_BYTES + index * ENTRY_BYTES;
+    const payload = payloads[index];
+    view.setUint32(pos, cursor, true);
+    view.setUint32(pos + 4, payload.length, true);
+    view.setUint16(pos + 8, frame.width, true);
+    view.setUint16(pos + 10, frame.height, true);
+    view.setUint16(pos + 12, frame.offsetX, true);
+    view.setUint16(pos + 14, frame.offsetY, true);
+    view.setUint16(pos + 16, delay, true);
+    view.setUint16(pos + 18, 0, true);
+    bytes.set(payload, cursor);
+    cursor += payload.length;
+  });
+  return new Blob([buffer], { type: "application/octet-stream" });
+}
+
+async function collectDirectory(handle, prefix = []) {
+  const files = [];
+  for await (const [name, child] of handle.entries()) {
+    if (child.kind === "file") {
+      files.push({ path: [...prefix, name], handle: child });
+    } else if (child.kind === "directory" && name !== "System Volume Information") {
+      files.push(...await collectDirectory(child, [...prefix, name]));
+    }
+  }
+  return files;
+}
+
+function askImportFolderMode(folderName) {
+  if (!state.animations.length) return Promise.resolve("replace");
+
+  return new Promise((resolve) => {
+    const dialog = els.importModeDialog;
+    const label = folderName ? `"${folderName}"` : "la carpeta seleccionada";
+    els.importModeText.textContent =
+      `Ya tienes ${state.animations.length} animaciones cargadas. Al importar ${label}, elige si quieres mezclarlas con las actuales o dejar solo esa carpeta en el editor.`;
+
+    const finish = (mode) => {
+      dialog.classList.remove("open");
+      els.importMerge.removeEventListener("click", onMerge);
+      els.importReplace.removeEventListener("click", onReplace);
+      els.importCancel.removeEventListener("click", onCancel);
+      dialog.removeEventListener("click", onBackdrop);
+      document.removeEventListener("keydown", onKey);
+      resolve(mode);
+    };
+    const onMerge = () => finish("merge");
+    const onReplace = () => finish("replace");
+    const onCancel = () => finish(null);
+    const onBackdrop = (ev) => {
+      if (ev.target === dialog) finish(null);
+    };
+    const onKey = (ev) => {
+      if (ev.key === "Escape") finish(null);
+    };
+
+    els.importMerge.addEventListener("click", onMerge);
+    els.importReplace.addEventListener("click", onReplace);
+    els.importCancel.addEventListener("click", onCancel);
+    dialog.addEventListener("click", onBackdrop);
+    document.addEventListener("keydown", onKey);
+    dialog.classList.add("open");
+    els.importMerge.focus();
+  });
+}
+
+function categoryNameFromPath(path) {
+  const parts = path.slice(0, -1);
+  const facesIndex = parts.lastIndexOf("faces");
+  const clean = facesIndex >= 0 ? parts.slice(facesIndex + 1) : parts;
+  if (clean.length >= 1) return safeName(clean[0]);
+  return "normal";
+}
+
+function animNameFromPath(path) {
+  const fileName = path[path.length - 1].replace(/\.[^.]+$/, "");
+  const parts = path.slice(0, -1);
+  const facesIndex = parts.lastIndexOf("faces");
+  const clean = facesIndex >= 0 ? parts.slice(facesIndex + 1) : parts;
+  if (clean.length >= 2) return safeName(clean[clean.length - 1]);
+  return safeName(fileName);
+}
+
+async function importFolder() {
+  if (!window.showDirectoryPicker) {
+    alert("Abre esta pagina con Edge o Chrome reciente. El navegador actual no permite elegir carpetas.");
+    return;
+  }
+  const handle = await window.showDirectoryPicker({ mode: "read" });
+  const importMode = await askImportFolderMode(handle.name);
+  if (!importMode) {
+    setStatus("Importacion cancelada.");
+    return;
+  }
+  setStatus("Leyendo carpeta...");
+  const entries = await collectDirectory(handle);
+  const animEntries = entries.filter((entry) => entry.path.at(-1).toLowerCase().endsWith(".anim"));
+  if (animEntries.length) {
+    if (importMode === "replace") {
+      clearEditorAnimations();
+    }
+    for (const entry of animEntries) {
+      const file = await entry.handle.getFile();
+      await decodeAnimFile(file, categoryNameFromPath(entry.path), animNameFromPath(entry.path));
+    }
+    setStatus(`${importMode === "replace" ? "Cargados solo" : "Mezclados"} ${animEntries.length} archivos .anim`, "ok");
+    render();
+    return;
+  }
+
+  const imageEntries = entries.filter((entry) => /\.(png|jpe?g|bmp|webp|gif)$/i.test(entry.path.at(-1)));
+  if (!imageEntries.length) {
+    throw new Error("La carpeta elegida no contiene .anim, PNG, JPG, JPEG, BMP, WEBP ni GIF.");
+  }
+  const groups = new Map();
+  for (const entry of imageEntries) {
+    const dir = entry.path.slice(0, -1).join("/");
+    if (!groups.has(dir)) groups.set(dir, []);
+    groups.get(dir).push(entry);
+  }
+  if (importMode === "replace") {
+    clearEditorAnimations();
+  }
+  for (const [dir, group] of groups) {
+    const parts = dir ? dir.split("/") : [];
+    const category = parts.length >= 2 ? parts[parts.length - 2] : (parts[0] || "normal");
+    const name = parts.length ? parts[parts.length - 1] : handle.name;
+    const anim = createAnimation(category, name, [], DEFAULT_CANVAS_W, DEFAULT_CANVAS_H, 10);
+    group.sort((a, b) => naturalCompare(a.path.at(-1), b.path.at(-1)));
+    for (const entry of group) {
+      const file = await entry.handle.getFile();
+      anim.frames.push(...await framesFromAnyImageFile(file, anim.canvasW, anim.canvasH));
+    }
+  }
+  setStatus(`${importMode === "replace" ? "Cargadas solo" : "Mezcladas"} ${imageEntries.length} imagenes en ${groups.size} animaciones`, "ok");
+  render();
+}
+
+async function importAnimationFolder() {
+  if (!window.showDirectoryPicker) {
+    alert("Abre esta pagina con Edge o Chrome reciente. El navegador actual no permite elegir carpetas.");
+    return;
+  }
+  const handle = await window.showDirectoryPicker({ mode: "read" });
+  setStatus("Importando animacion desde carpeta...");
+  const files = [];
+  for await (const [name, child] of handle.entries()) {
+    if (child.kind !== "file") continue;
+    if (!/\.(png|jpe?g|bmp|webp|gif)$/i.test(name)) continue;
+    files.push({ name, handle: child });
+  }
+  files.sort((a, b) => naturalCompare(a.name, b.name));
+  if (!files.length) {
+    throw new Error("La carpeta elegida no contiene PNG, JPG, JPEG, BMP, WEBP ni GIF.");
+  }
+
+  const current = selectedAnimation();
+  const category = safeName(els.category.value || current?.category || state.categoryFilter || "normal");
+  const name = safeName(handle.name || "animacion");
+  const canvasW = Number(els.canvasW.value) || current?.canvasW || DEFAULT_CANVAS_W;
+  const canvasH = Number(els.canvasH.value) || current?.canvasH || DEFAULT_CANVAS_H;
+  const fps = Number(els.fps.value) || current?.fps || 10;
+  const frames = [];
+  for (const entry of files) {
+    const file = await entry.handle.getFile();
+    frames.push(...await framesFromAnyImageFile(file, canvasW, canvasH));
+  }
+
+  const anim = createAnimation(category, name, frames, canvasW, canvasH, fps);
+  state.selectedAnim = anim.id;
+  state.selectedFrame = Math.floor(anim.frames.length / 2);
+  state.categoryFilter = "";
+  setStatus(`Importada ${category}/${name}: ${frames.length} frames en orden por nombre`, "ok");
+  render();
+}
+
+async function loadLocalFaces() {
+  setStatus("Cargando copia local faces...");
+  let response;
+  try {
+    response = await fetch("local_faces_manifest.json", { cache: "no-store" });
+  } catch (err) {
+    throw new Error("No se pudo leer local_faces_manifest.json. Abre con ABRIR_EDITOR_CARITAS.bat.");
+  }
+  if (!response.ok) {
+    throw new Error("No hay indice local. Abre con ABRIR_EDITOR_CARITAS.bat para generarlo.");
+  }
+  const manifest = await response.json();
+  if (!manifest.files || !manifest.files.length) {
+    throw new Error("La copia local faces no contiene .anim.");
+  }
+  state.animations = [];
+  state.selectedAnim = null;
+  state.selectedFrame = 0;
+  state.categoryFilter = "";
+  for (const entry of manifest.files) {
+    const animResponse = await fetch(entry.path, { cache: "no-store" });
+    if (!animResponse.ok) {
+      throw new Error(`No se pudo abrir ${entry.path}`);
+    }
+    const blob = await animResponse.blob();
+    const file = new File([blob], entry.name + ".anim", { type: "application/octet-stream" });
+    await decodeAnimFile(file, entry.category, entry.name);
+  }
+  setStatus(`Cargada copia local: ${manifest.files.length} animaciones .anim`, "ok");
+  render();
+}
+
+function naturalCompare(a, b) {
+  return a.localeCompare(b, undefined, { numeric: true, sensitivity: "base" });
+}
+
+async function addFilesAt(mode) {
+  const anim = selectedAnimation();
+  if (!anim) {
+    alert("Primero selecciona o crea una animacion.");
+    return;
+  }
+  state.insertMode = mode;
+  els.fileInput.value = "";
+  els.fileInput.click();
+}
+
+async function handlePickedFiles(files) {
+  const anim = selectedAnimation();
+  if (!anim || !files.length) return;
+  setStatus("Procesando imagenes...");
+  const frames = [];
+  for (const file of [...files]) {
+    if (file.name.toLowerCase().endsWith(".anim")) {
+      await decodeAnimFile(file, anim.category, file.name.replace(/\.[^.]+$/, ""));
+      continue;
+    }
+    if (!/\.(png|jpe?g|bmp|webp|gif)$/i.test(file.name) && !file.type.startsWith("image/")) continue;
+    frames.push(...await framesFromAnyImageFile(file, anim.canvasW, anim.canvasH));
+  }
+  const index = Math.max(0, Math.min(anim.frames.length, state.selectedFrame + (state.insertMode === "after" ? 1 : 0)));
+  anim.frames.splice(index, 0, ...frames);
+  state.selectedFrame = index;
+  setStatus(`Anadidos ${frames.length} frames`, "ok");
+  render();
+}
+
+async function exportFaces() {
+  if (!state.animations.some((anim) => anim.frames.length)) {
+    alert("No hay animaciones con frames para exportar.");
+    return;
+  }
+  if (!window.showDirectoryPicker) {
+    alert("Abre esta pagina con Edge o Chrome reciente para poder escribir carpetas.");
+    return;
+  }
+  const root = await pickExportRoot();
+  const rootIsFaces = root.name && root.name.toLowerCase() === "faces";
+  const targetLabel = rootIsFaces ? root.name : `${root.name || "carpeta elegida"}/faces`;
+  setStatus(`Exportando a ${targetLabel}...`);
+  let faces;
+  if (!confirm(`Se va a exportar en "${targetLabel}".\n\n${els.cleanExport.checked ? "Se limpiara antes de escribir." : "No se limpiara antes de escribir."}\n\nContinuar?`)) {
+    setStatus("Exportacion cancelada.");
+    return;
+  }
+  if (!rootIsFaces && els.cleanExport.checked) {
+    try { await root.removeEntry("faces", { recursive: true }); } catch (_) {}
+  }
+  faces = rootIsFaces ? root : await root.getDirectoryHandle("faces", { create: true });
+  if (els.cleanExport.checked) {
+    for await (const [name] of faces.entries()) {
+      await faces.removeEntry(name, { recursive: true });
+    }
+  }
+
+  let written = 0;
+  let totalBytes = 0;
+  for (const anim of state.animations) {
+    if (!anim.frames.length) continue;
+    const categoryDir = await faces.getDirectoryHandle(safeName(anim.category), { create: true });
+    const fileHandle = await categoryDir.getFileHandle(`${safeName(anim.name)}.anim`, { create: true });
+    const blob = buildAnimBlob(anim);
+    const writable = await fileHandle.createWritable();
+    await writable.write(blob);
+    await writable.close();
+    written++;
+    totalBytes += blob.size;
+  }
+  setStatus(`Exportadas ${written} animaciones en /faces (${formatBytes(totalBytes)}).`, "ok");
+}
+
+function formatBytes(bytes) {
+  if (bytes > 1024 * 1024) return `${(bytes / 1024 / 1024).toFixed(2)} MB`;
+  if (bytes > 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${bytes} B`;
+}
+
+function stopPlayback() {
+  if (state.playTimer) {
+    clearInterval(state.playTimer);
+    state.playTimer = null;
+  }
+}
+
+function play() {
+  const anim = selectedAnimation();
+  if (!anim || !anim.frames.length) return;
+  stopPlayback();
+  state.playTimer = setInterval(() => {
+    state.selectedFrame = (state.selectedFrame + 1) % anim.frames.length;
+    renderFrames(anim);
+    renderStage(anim);
+    renderMeta(anim);
+  }, Math.max(30, Math.round(1000 / Math.max(1, Number(anim.fps) || 10))));
+}
+
+function updateAnimMeta() {
+  const anim = selectedAnimation();
+  if (!anim) return;
+  anim.category = safeName(els.category.value);
+  anim.name = safeName(els.name.value);
+  anim.fps = Math.max(1, Math.min(60, Number(els.fps.value) || 10));
+  anim.canvasW = Math.max(1, Math.min(480, Number(els.canvasW.value) || DEFAULT_CANVAS_W));
+  anim.canvasH = Math.max(1, Math.min(480, Number(els.canvasH.value) || DEFAULT_CANVAS_H));
+  for (const frame of anim.frames) {
+    frame.previewUrl = makePreview(frame, anim.canvasW, anim.canvasH);
+  }
+  render();
+}
+
+function updateFrameMeta() {
+  const anim = selectedAnimation();
+  const frame = anim && anim.frames[state.selectedFrame];
+  if (!frame) return;
+  frame.name = els.frameName.value || frame.name;
+  frame.offsetX = Math.max(0, Math.min(480, Number(els.offsetX.value) || 0));
+  frame.offsetY = Math.max(0, Math.min(480, Number(els.offsetY.value) || 0));
+  frame.previewUrl = makePreview(frame, anim.canvasW, anim.canvasH);
+  render();
+}
+
+$("importFolderBtn").onclick = () => importFolder().catch((err) => setStatus(err.message || err, "bad"));
+$("importAnimationFolderBtn").onclick = () => importAnimationFolder().catch((err) => setStatus(err.message || err, "bad"));
+$("loadLocalFacesBtn").onclick = () => loadLocalFaces().catch((err) => setStatus(err.message || err, "bad"));
+$("importFilesBtn").onclick = () => addFilesAt("after");
+$("addBeforeBtn").onclick = () => addFilesAt("before");
+$("addAfterBtn").onclick = () => addFilesAt("after");
+$("exportBtn").onclick = () => exportFaces().catch((err) => setStatus(err.message || err, "bad"));
+$("newAnimBtn").onclick = () => { createAnimation("normal", "nueva_animacion"); render(); };
+$("showAllBtn").onclick = () => { state.categoryFilter = ""; render(); };
+$("moveCategoryBtn").onclick = () => {
+  const anim = selectedAnimation();
+  if (!anim) return;
+  anim.category = safeName(els.categoryPreset.value);
+  state.categoryFilter = anim.category;
+  setStatus(`Movida a categoria ${anim.category}. Se exportara en faces/${anim.category}/`, "ok");
+  render();
+};
+$("playBtn").onclick = play;
+$("stopBtn").onclick = stopPlayback;
+$("deleteAnimBtn").onclick = () => {
+  const anim = selectedAnimation();
+  if (!anim) return;
+  deleteAnimation(anim.id);
+};
+$("deleteFrameBtn").onclick = () => {
+  const anim = selectedAnimation();
+  if (!anim || !anim.frames.length) return;
+  anim.frames.splice(state.selectedFrame, 1);
+  state.selectedFrame = Math.max(0, Math.min(state.selectedFrame, anim.frames.length - 1));
+  render();
+};
+$("duplicateFrameBtn").onclick = () => {
+  const anim = selectedAnimation();
+  const frame = anim && anim.frames[state.selectedFrame];
+  if (!frame) return;
+  const copy = { ...frame, name: `${frame.name}_copy`, pixels: new Uint8Array(frame.pixels), previewUrl: frame.previewUrl };
+  anim.frames.splice(state.selectedFrame + 1, 0, copy);
+  state.selectedFrame++;
+  render();
+};
+
+els.fileInput.onchange = (ev) => handlePickedFiles(ev.target.files).catch((err) => setStatus(err.message || err, "bad"));
+for (const input of [els.category, els.name, els.fps, els.canvasW, els.canvasH]) input.onchange = updateAnimMeta;
+for (const input of [els.offsetX, els.offsetY, els.frameName]) input.onchange = updateFrameMeta;
+
+const dropzone = $("dropzone");
+dropzone.ondragover = (ev) => { ev.preventDefault(); dropzone.style.borderColor = "var(--hot)"; };
+dropzone.ondragleave = () => { dropzone.style.borderColor = "var(--line)"; };
+dropzone.ondrop = (ev) => {
+  ev.preventDefault();
+  dropzone.style.borderColor = "var(--line)";
+  state.insertMode = "after";
+  handlePickedFiles(ev.dataTransfer.files).catch((err) => setStatus(err.message || err, "bad"));
+};
+
+initCategoryPresetSelect();
+render();
+loadLocalFaces().catch((err) => setStatus(err.message || err, "bad"));
+</script>
+</body>
+</html>

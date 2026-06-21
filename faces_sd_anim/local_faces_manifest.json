@@ -1,0 +1,547 @@
+﻿{
+    "root":  "C:\\Users\\adri8\\Desktop\\last\\",
+    "faces":  "faces_sd_anim/faces",
+    "generated":  "2026-06-20T21:56:29",
+    "files":  [
+                  {
+                      "path":  "faces/agua/agua_1.anim",
+                      "category":  "agua",
+                      "name":  "agua_1",
+                      "bytes":  64012
+                  },
+                  {
+                      "path":  "faces/agua/sung_nuoc_1.anim",
+                      "category":  "agua",
+                      "name":  "sung_nuoc_1",
+                      "bytes":  177056
+                  },
+                  {
+                      "path":  "faces/agua/sung_nuoc_2.anim",
+                      "category":  "agua",
+                      "name":  "sung_nuoc_2",
+                      "bytes":  159596
+                  },
+                  {
+                      "path":  "faces/break/dasai_1.anim",
+                      "category":  "break",
+                      "name":  "dasai_1",
+                      "bytes":  873364
+                  },
+                  {
+                      "path":  "faces/break/dasai_2.anim",
+                      "category":  "break",
+                      "name":  "dasai_2",
+                      "bytes":  118904
+                  },
+                  {
+                      "path":  "faces/break/happy_1.anim",
+                      "category":  "break",
+                      "name":  "happy_1",
+                      "bytes":  135136
+                  },
+                  {
+                      "path":  "faces/break/hehe_1.anim",
+                      "category":  "break",
+                      "name":  "hehe_1",
+                      "bytes":  266932
+                  },
+                  {
+                      "path":  "faces/break/leu_leu_1.anim",
+                      "category":  "break",
+                      "name":  "leu_leu_1",
+                      "bytes":  218208
+                  },
+                  {
+                      "path":  "faces/break/smile_1.anim",
+                      "category":  "break",
+                      "name":  "smile_1",
+                      "bytes":  62552
+                  },
+                  {
+                      "path":  "faces/celebrar/anime_love_1.anim",
+                      "category":  "celebrar",
+                      "name":  "anime_love_1",
+                      "bytes":  82540
+                  },
+                  {
+                      "path":  "faces/celebrar/fire_1.anim",
+                      "category":  "celebrar",
+                      "name":  "fire_1",
+                      "bytes":  100200
+                  },
+                  {
+                      "path":  "faces/celebrar/happy_1.anim",
+                      "category":  "celebrar",
+                      "name":  "happy_1",
+                      "bytes":  135136
+                  },
+                  {
+                      "path":  "faces/celebrar/keep_it_up_1.anim",
+                      "category":  "celebrar",
+                      "name":  "keep_it_up_1",
+                      "bytes":  305152
+                  },
+                  {
+                      "path":  "faces/celebrar/kissou_1.anim",
+                      "category":  "celebrar",
+                      "name":  "kissou_1",
+                      "bytes":  63472
+                  },
+                  {
+                      "path":  "faces/celebrar/love_1.anim",
+                      "category":  "celebrar",
+                      "name":  "love_1",
+                      "bytes":  9140
+                  },
+                  {
+                      "path":  "faces/celebrar/love_2.anim",
+                      "category":  "celebrar",
+                      "name":  "love_2",
+                      "bytes":  310120
+                  },
+                  {
+                      "path":  "faces/celebrar/love_3.anim",
+                      "category":  "celebrar",
+                      "name":  "love_3",
+                      "bytes":  250992
+                  },
+                  {
+                      "path":  "faces/celebrar/mini_love_1.anim",
+                      "category":  "celebrar",
+                      "name":  "mini_love_1",
+                      "bytes":  23476
+                  },
+                  {
+                      "path":  "faces/celebrar/smile_1.anim",
+                      "category":  "celebrar",
+                      "name":  "smile_1",
+                      "bytes":  62552
+                  },
+                  {
+                      "path":  "faces/celebrar/star_1.anim",
+                      "category":  "celebrar",
+                      "name":  "star_1",
+                      "bytes":  491800
+                  },
+                  {
+                      "path":  "faces/celebrar/xi_khoi_1.anim",
+                      "category":  "celebrar",
+                      "name":  "xi_khoi_1",
+                      "bytes":  114156
+                  },
+                  {
+                      "path":  "faces/celebrar/xi_lua_1.anim",
+                      "category":  "celebrar",
+                      "name":  "xi_lua_1",
+                      "bytes":  163572
+                  },
+                  {
+                      "path":  "faces/especial/aot_1.anim",
+                      "category":  "especial",
+                      "name":  "aot_1",
+                      "bytes":  934624
+                  },
+                  {
+                      "path":  "faces/especial/bee_1.anim",
+                      "category":  "especial",
+                      "name":  "bee_1",
+                      "bytes":  505240
+                  },
+                  {
+                      "path":  "faces/especial/car_1.anim",
+                      "category":  "especial",
+                      "name":  "car_1",
+                      "bytes":  327420
+                  },
+                  {
+                      "path":  "faces/especial/cuoi_khinh_bi_1.anim",
+                      "category":  "especial",
+                      "name":  "cuoi_khinh_bi_1",
+                      "bytes":  168516
+                  },
+                  {
+                      "path":  "faces/especial/demon_slayer_1.anim",
+                      "category":  "especial",
+                      "name":  "demon_slayer_1",
+                      "bytes":  265188
+                  },
+                  {
+                      "path":  "faces/especial/den_giao_thong_1.anim",
+                      "category":  "especial",
+                      "name":  "den_giao_thong_1",
+                      "bytes":  441024
+                  },
+                  {
+                      "path":  "faces/especial/den_pha_1.anim",
+                      "category":  "especial",
+                      "name":  "den_pha_1",
+                      "bytes":  859012
+                  },
+                  {
+                      "path":  "faces/especial/egg_1.anim",
+                      "category":  "especial",
+                      "name":  "egg_1",
+                      "bytes":  426692
+                  },
+                  {
+                      "path":  "faces/especial/gundam_1.anim",
+                      "category":  "especial",
+                      "name":  "gundam_1",
+                      "bytes":  259772
+                  },
+                  {
+                      "path":  "faces/especial/intro_1.anim",
+                      "category":  "especial",
+                      "name":  "intro_1",
+                      "bytes":  281628
+                  },
+                  {
+                      "path":  "faces/especial/intro_2.anim",
+                      "category":  "especial",
+                      "name":  "intro_2",
+                      "bytes":  1388196
+                  },
+                  {
+                      "path":  "faces/especial/LB_1.anim",
+                      "category":  "especial",
+                      "name":  "LB_1",
+                      "bytes":  388308
+                  },
+                  {
+                      "path":  "faces/especial/LB_2.anim",
+                      "category":  "especial",
+                      "name":  "LB_2",
+                      "bytes":  629216
+                  },
+                  {
+                      "path":  "faces/especial/LB_3.anim",
+                      "category":  "especial",
+                      "name":  "LB_3",
+                      "bytes":  449224
+                  },
+                  {
+                      "path":  "faces/especial/mochi_1.anim",
+                      "category":  "especial",
+                      "name":  "mochi_1",
+                      "bytes":  411796
+                  },
+                  {
+                      "path":  "faces/especial/mochidoo_1.anim",
+                      "category":  "especial",
+                      "name":  "mochidoo_1",
+                      "bytes":  454672
+                  },
+                  {
+                      "path":  "faces/especial/msg_1.anim",
+                      "category":  "especial",
+                      "name":  "msg_1",
+                      "bytes":  7084
+                  },
+                  {
+                      "path":  "faces/especial/music_1.anim",
+                      "category":  "especial",
+                      "name":  "music_1",
+                      "bytes":  107400
+                  },
+                  {
+                      "path":  "faces/especial/neon_1.anim",
+                      "category":  "especial",
+                      "name":  "neon_1",
+                      "bytes":  377308
+                  },
+                  {
+                      "path":  "faces/especial/noname_1.anim",
+                      "category":  "especial",
+                      "name":  "noname_1",
+                      "bytes":  99480
+                  },
+                  {
+                      "path":  "faces/especial/police_1.anim",
+                      "category":  "especial",
+                      "name":  "police_1",
+                      "bytes":  243004
+                  },
+                  {
+                      "path":  "faces/especial/pong_1.anim",
+                      "category":  "especial",
+                      "name":  "pong_1",
+                      "bytes":  253044
+                  },
+                  {
+                      "path":  "faces/especial/rain_1.anim",
+                      "category":  "especial",
+                      "name":  "rain_1",
+                      "bytes":  225672
+                  },
+                  {
+                      "path":  "faces/especial/sakura_1.anim",
+                      "category":  "especial",
+                      "name":  "sakura_1",
+                      "bytes":  249708
+                  },
+                  {
+                      "path":  "faces/especial/samurai_1.anim",
+                      "category":  "especial",
+                      "name":  "samurai_1",
+                      "bytes":  258236
+                  },
+                  {
+                      "path":  "faces/especial/speed_1.anim",
+                      "category":  "especial",
+                      "name":  "speed_1",
+                      "bytes":  690332
+                  },
+                  {
+                      "path":  "faces/especial/speed_2.anim",
+                      "category":  "especial",
+                      "name":  "speed_2",
+                      "bytes":  184392
+                  },
+                  {
+                      "path":  "faces/especial/speed_3.anim",
+                      "category":  "especial",
+                      "name":  "speed_3",
+                      "bytes":  330984
+                  },
+                  {
+                      "path":  "faces/especial/sushi_1.anim",
+                      "category":  "especial",
+                      "name":  "sushi_1",
+                      "bytes":  296796
+                  },
+                  {
+                      "path":  "faces/especial/thong_long_1.anim",
+                      "category":  "especial",
+                      "name":  "thong_long_1",
+                      "bytes":  285292
+                  },
+                  {
+                      "path":  "faces/especial/thu_nho_1.anim",
+                      "category":  "especial",
+                      "name":  "thu_nho_1",
+                      "bytes":  106436
+                  },
+                  {
+                      "path":  "faces/especial/turbo_1.anim",
+                      "category":  "especial",
+                      "name":  "turbo_1",
+                      "bytes":  530648
+                  },
+                  {
+                      "path":  "faces/especial/up_size_down_1.anim",
+                      "category":  "especial",
+                      "name":  "up_size_down_1",
+                      "bytes":  228724
+                  },
+                  {
+                      "path":  "faces/especial/wheels_1.anim",
+                      "category":  "especial",
+                      "name":  "wheels_1",
+                      "bytes":  327028
+                  },
+                  {
+                      "path":  "faces/especial/yakura_1.anim",
+                      "category":  "especial",
+                      "name":  "yakura_1",
+                      "bytes":  337360
+                  },
+                  {
+                      "path":  "faces/focus/hand_some_1.anim",
+                      "category":  "focus",
+                      "name":  "hand_some_1",
+                      "bytes":  326332
+                  },
+                  {
+                      "path":  "faces/focus/left_1.anim",
+                      "category":  "focus",
+                      "name":  "left_1",
+                      "bytes":  64524
+                  },
+                  {
+                      "path":  "faces/focus/serious_1.anim",
+                      "category":  "focus",
+                      "name":  "serious_1",
+                      "bytes":  38320
+                  },
+                  {
+                      "path":  "faces/llorar/cry_1.anim",
+                      "category":  "llorar",
+                      "name":  "cry_1",
+                      "bytes":  206284
+                  },
+                  {
+                      "path":  "faces/llorar/cry_2.anim",
+                      "category":  "llorar",
+                      "name":  "cry_2",
+                      "bytes":  428552
+                  },
+                  {
+                      "path":  "faces/llorar/crying_1.anim",
+                      "category":  "llorar",
+                      "name":  "crying_1",
+                      "bytes":  8532
+                  },
+                  {
+                      "path":  "faces/llorar/sad_1.anim",
+                      "category":  "llorar",
+                      "name":  "sad_1",
+                      "bytes":  7676
+                  },
+                  {
+                      "path":  "faces/llorar/scared_1.anim",
+                      "category":  "llorar",
+                      "name":  "scared_1",
+                      "bytes":  82468
+                  },
+                  {
+                      "path":  "faces/normal/distracted_1.anim",
+                      "category":  "normal",
+                      "name":  "distracted_1",
+                      "bytes":  373672
+                  },
+                  {
+                      "path":  "faces/normal/happy_1.anim",
+                      "category":  "normal",
+                      "name":  "happy_1",
+                      "bytes":  135136
+                  },
+                  {
+                      "path":  "faces/normal/hat_xi_1.anim",
+                      "category":  "normal",
+                      "name":  "hat_xi_1",
+                      "bytes":  130360
+                  },
+                  {
+                      "path":  "faces/normal/hat_xi_2.anim",
+                      "category":  "normal",
+                      "name":  "hat_xi_2",
+                      "bytes":  248924
+                  },
+                  {
+                      "path":  "faces/normal/hehe_1.anim",
+                      "category":  "normal",
+                      "name":  "hehe_1",
+                      "bytes":  266932
+                  },
+                  {
+                      "path":  "faces/normal/mac_dinh_1.anim",
+                      "category":  "normal",
+                      "name":  "mac_dinh_1",
+                      "bytes":  19684
+                  },
+                  {
+                      "path":  "faces/normal/neutral_1.anim",
+                      "category":  "normal",
+                      "name":  "neutral_1",
+                      "bytes":  30776
+                  },
+                  {
+                      "path":  "faces/normal/nheo_mat_1.anim",
+                      "category":  "normal",
+                      "name":  "nheo_mat_1",
+                      "bytes":  242692
+                  },
+                  {
+                      "path":  "faces/normal/nhin_ben_phai_1.anim",
+                      "category":  "normal",
+                      "name":  "nhin_ben_phai_1",
+                      "bytes":  98036
+                  },
+                  {
+                      "path":  "faces/normal/nhin_ben_trai_1.anim",
+                      "category":  "normal",
+                      "name":  "nhin_ben_trai_1",
+                      "bytes":  89720
+                  },
+                  {
+                      "path":  "faces/normal/nhin_xuong_1.anim",
+                      "category":  "normal",
+                      "name":  "nhin_xuong_1",
+                      "bytes":  108644
+                  },
+                  {
+                      "path":  "faces/normal/smile_1.anim",
+                      "category":  "normal",
+                      "name":  "smile_1",
+                      "bytes":  62552
+                  },
+                  {
+                      "path":  "faces/normal/UwU_1.anim",
+                      "category":  "normal",
+                      "name":  "UwU_1",
+                      "bytes":  186684
+                  },
+                  {
+                      "path":  "faces/ojos/chong_mat_1.anim",
+                      "category":  "ojos",
+                      "name":  "chong_mat_1",
+                      "bytes":  497220
+                  },
+                  {
+                      "path":  "faces/ojos/nheo_mat_1.anim",
+                      "category":  "ojos",
+                      "name":  "nheo_mat_1",
+                      "bytes":  242692
+                  },
+                  {
+                      "path":  "faces/sleep/sleepy_2.anim",
+                      "category":  "sleep",
+                      "name":  "sleepy_2",
+                      "bytes":  172508
+                  },
+                  {
+                      "path":  "faces/stop/angry_1.anim",
+                      "category":  "stop",
+                      "name":  "angry_1",
+                      "bytes":  30868
+                  },
+                  {
+                      "path":  "faces/stop/angry_2.anim",
+                      "category":  "stop",
+                      "name":  "angry_2",
+                      "bytes":  274968
+                  },
+                  {
+                      "path":  "faces/stop/angry_3.anim",
+                      "category":  "stop",
+                      "name":  "angry_3",
+                      "bytes":  261320
+                  },
+                  {
+                      "path":  "faces/stop/angry_4.anim",
+                      "category":  "stop",
+                      "name":  "angry_4",
+                      "bytes":  391772
+                  },
+                  {
+                      "path":  "faces/stop/devil_1.anim",
+                      "category":  "stop",
+                      "name":  "devil_1",
+                      "bytes":  265300
+                  },
+                  {
+                      "path":  "faces/stop/devil_2.anim",
+                      "category":  "stop",
+                      "name":  "devil_2",
+                      "bytes":  327692
+                  },
+                  {
+                      "path":  "faces/stop/devil_eyes_1.anim",
+                      "category":  "stop",
+                      "name":  "devil_eyes_1",
+                      "bytes":  227004
+                  },
+                  {
+                      "path":  "faces/stop/gian_du_1.anim",
+                      "category":  "stop",
+                      "name":  "gian_du_1",
+                      "bytes":  247852
+                  },
+                  {
+                      "path":  "faces/stop/yelling_1.anim",
+                      "category":  "stop",
+                      "name":  "yelling_1",
+                      "bytes":  273408
+                  }
+              ]
+}

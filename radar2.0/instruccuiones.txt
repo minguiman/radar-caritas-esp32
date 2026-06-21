@@ -1,0 +1,44 @@
+Sí, ya está compilado correctamente.
+La línea importante es:
+txt
+
+
+
+[SUCCESS]
+
+Y además te ha generado el firmware aquí:
+firmware.bin
+Ahora el siguiente paso es subirlo a la placa:
+powershell
+
+
+
+py -m platformio run -t upload
+
+Si quieres ver el puerto antes:
+powershell
+
+
+
+py -m platformio device list
+
+Y después de subirlo, para ver logs:
+powershell
+
+
+
+py -m platformio device monitor
+
+Si la subida falla, usa el modo BOOT:
+mantén pulsado BOOT
+pulsa RESET
+suelta RESET
+suelta BOOT
+vuelve a ejecutar:
+powershell
+
+
+
+py -m platformio run -t upload
+
+Si quieres, pega aquí el resultado de py -m platformio run -t upload y te digo si ha entrado bien o no.

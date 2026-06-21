@@ -1,0 +1,126 @@
+INSTRUCCIONES PARA CARITAS / ANIMACIONES .ANIM
+================================================
+
+Carpeta principal:
+.
+
+Proyecto firmware:
+.\radar2.0
+
+Salida final para la SD:
+.\faces_sd_anim\faces
+
+Preview HTML:
+.\faces_sd_anim\_preview.html
+
+Editor visual:
+.\faces_sd_anim\editor.html
+
+Script de arranque:
+.\ABRIR_EDITOR_CARITAS.bat
+
+
+1. ABRIR EL EDITOR
+------------------
+
+Ejecuta:
+
+.\ABRIR_EDITOR_CARITAS.bat
+
+El script:
+
+- genera `.\faces_sd_anim\local_faces_manifest.json`
+- arranca un servidor local en `http://127.0.0.1:8765/editor.html`
+- abre el navegador
+
+Desde el editor puedes:
+
+- cargar la copia local de `.\faces_sd_anim\faces`
+- importar PNG, JPG, BMP, WEBP o GIF
+- importar una carpeta de animacion
+- reordenar, duplicar y borrar frames
+- mover animaciones entre categorias
+- exportar una carpeta `faces` lista para la SD
+
+
+2. VER SOLO EL PREVIEW
+----------------------
+
+Abre:
+
+.\faces_sd_anim\_preview.html
+
+
+3. REGENERAR .ANIM DESDE EL MANIFEST
+------------------------------------
+
+```powershell
+cd .\radar2.0
+py -3 .\tools\face_anim_tool.py from-manifest
+```
+
+Esto vuelve a generar:
+
+- `.\faces_sd_anim\faces`
+- `.\faces_sd_anim\_preview.html`
+
+
+4. COPIAR A LA SD
+-----------------
+
+Si el dispositivo esta en modo almacenamiento USB y la SD aparece como `F:`:
+
+```powershell
+robocopy ".\faces_sd_anim\faces" "F:\faces" /MIR /R:2 /W:1 /NFL /NDL /NP
+```
+
+`/MIR` reemplaza el contenido de `F:\faces`, pero no toca otras carpetas de la SD.
+
+
+5. CARGAR FIRMWARE TEMPORAL DE SD USB
+-------------------------------------
+
+```powershell
+cd .\radar2.0
+py -3 -m platformio run -e release_sd_msc -t upload --upload-port COM4
+```
+
+Para ver puertos disponibles:
+
+```powershell
+py -3 -m platformio device list
+```
+
+
+6. VOLVER AL FIRMWARE NORMAL
+----------------------------
+
+```powershell
+cd .\radar2.0
+py -3 -m platformio run -e release -t upload --upload-port COM5
+```
+
+
+7. FORMATO USADO POR EL FIRMWARE
+--------------------------------
+
+El firmware actual lee solo archivos `.anim` desde:
+
+`/faces`
+
+Ejemplos:
+
+- `F:\faces\normal\happy_1.anim`
+- `F:\faces\focus\serious_1.anim`
+- `F:\faces\agua\agua_1.anim`
+
+
+8. SI ALGO FALLA
+----------------
+
+Comprueba:
+
+1. La SD esta en FAT32.
+2. Existe `F:\faces`.
+3. Dentro de `F:\faces` hay archivos `.anim`.
+4. Has vuelto a cargar el firmware `release`, no `release_sd_msc`.
