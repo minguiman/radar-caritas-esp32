@@ -29,6 +29,7 @@ struct DynamicAnimation
     uint16_t canvasHeight = 0;
     uint16_t offsetX = 0;
     uint16_t offsetY = 0;
+    uint8_t scale = 1;
     String categoryPath;
     size_t categoryEntryCount = 0;
     struct Frame
@@ -40,6 +41,7 @@ struct DynamicAnimation
         uint16_t offsetY = 0;
         uint16_t canvasWidth = 0;
         uint16_t canvasHeight = 0;
+        uint8_t scale = 1;
         uint32_t dataOffset = 0;
         uint32_t dataSize = 0;
     };
@@ -72,10 +74,12 @@ constexpr size_t kReadChunkBytes = 4096;
 constexpr size_t kPersistentFrameBufferPixels = static_cast<size_t>(AppConfig::kScreenWidth) * AppConfig::kScreenHeight;
 constexpr uint32_t kSpecialMinIntervalMs = 3UL * 60UL * 1000UL;
 constexpr uint32_t kSpecialJitterMs = 20UL * 1000UL;
-constexpr uint8_t kBaseLoopsBeforeRotate = 1;
+constexpr uint8_t kLoopsBeforeChange = 2;
 constexpr uint8_t kAnimMagic[8] = {'R', '2', 'A', 'N', 'I', 'M', '0', '1'};
 constexpr uint16_t kAnimHeaderBytes = 28;
 constexpr uint16_t kAnimFrameEntryBytes = 20;
+constexpr uint16_t kAnimFrameFlagScale2x = 0x0001;
+constexpr uint16_t kAnimFrameFlagScale4x = 0x0002;
 
 Board* g_board = nullptr;
 bool g_demoLoaded = false;
@@ -88,6 +92,7 @@ std::vector<CachedAnimationCategory> g_animationCache;
 uint16_t* g_frameBuffer = nullptr;
 size_t g_frameBufferPixels = 0;
 size_t g_loadedFrameIndex = static_cast<size_t>(-1);
+uint32_t g_frameIntervalMs = AppConfig::kImageFrameIntervalMs;
 uint32_t g_nextFrameMs = 0;
 uint32_t g_nextSdRetryMs = 0;
 uint32_t g_nextSpecialMs = 0;
@@ -256,9 +261,17 @@ bool readAnimContainerFile(const String& path, const String& label, DynamicAnima
         frame.offsetX = readLe16(entry + 12);
         frame.offsetY = readLe16(entry + 14);
         const uint16_t delayMs = readLe16(entry + 16);
+        const uint16_t frameFlags = readLe16(entry + 18);
         (void)delayMs;
         frame.canvasWidth = canvasWidth;
         frame.canvasHeight = canvasHeight;
+        if ((frameFlags & kAnimFrameFlagScale4x) != 0 || (frame.width == 120 && frame.height == 120)) {
+            frame.scale = 4;
+        } else if ((frameFlags & kAnimFrameFlagScale2x) != 0 || (frame.width == 240 && frame.height == 240)) {
+            frame.scale = 2;
+        } else {
+            frame.scale = 1;
+        }
         const size_t pixels = static_cast<size_t>(frame.width) * frame.height;
         if (frame.width == 0 || frame.height == 0 || pixels > kPersistentFrameBufferPixels
             || frame.dataSize == 0 || frame.dataOffset >= fileSize
@@ -285,6 +298,7 @@ bool readAnimContainerFile(const String& path, const String& label, DynamicAnima
     animation.offsetY = animation.frames[0].offsetY;
     animation.canvasWidth = canvasWidth;
     animation.canvasHeight = canvasHeight;
+    animation.scale = animation.frames[0].scale;
     animation.animContainer = true;
     return true;
 }
@@ -663,6 +677,7 @@ bool loadFrame(size_t frameIndex)
         uint16_t frameOffsetY = g_dynamicActive.offsetY;
         uint16_t frameCanvasWidth = g_dynamicActive.canvasWidth;
         uint16_t frameCanvasHeight = g_dynamicActive.canvasHeight;
+        uint8_t frameScale = g_dynamicActive.scale;
         if (g_dynamicActive.frames.empty() || !g_dynamicActive.animContainer) {
             g_errorText = "NO .ANIM";
             return false;
@@ -674,6 +689,7 @@ bool loadFrame(size_t frameIndex)
         frameOffsetY = frame.offsetY;
         frameCanvasWidth = frame.canvasWidth;
         frameCanvasHeight = frame.canvasHeight;
+        frameScale = frame.scale;
         if (!loadAnimRleFrame(frame)) {
             return false;
         }
@@ -685,6 +701,7 @@ bool loadFrame(size_t frameIndex)
         g_dynamicActive.offsetY = frameOffsetY;
         g_dynamicActive.canvasWidth = frameCanvasWidth;
         g_dynamicActive.canvasHeight = frameCanvasHeight;
+        g_dynamicActive.scale = frameScale;
         snprintf(g_detail, sizeof(g_detail), "SD %s %u/%u %ux%u",
             g_dynamicActive.label.c_str(),
             static_cast<unsigned>(frameIndex + 1),
@@ -723,9 +740,18 @@ bool advancePlaybackFrame(uint32_t nowMs)
         return recoverOneShotToBaseFrame();
     }
 
+    ++g_baseLoopCount;
+
     if (g_oneShotActive) {
+        if (g_baseLoopCount < kLoopsBeforeChange) {
+            return loadFrame(0);
+        }
         g_oneShotActive = false;
         applyRequestedAnimation(true);
+        return loadFrame(0);
+    }
+
+    if (g_baseLoopCount < kLoopsBeforeChange) {
         return loadFrame(0);
     }
 
@@ -736,9 +762,7 @@ bool advancePlaybackFrame(uint32_t nowMs)
         return loadFrame(0);
     }
 
-    ++g_baseLoopCount;
     if (g_dynamicActive.categoryEntryCount > 1
-        && g_baseLoopCount >= kBaseLoopsBeforeRotate
         && startDynamicBaseForMood(g_requestedMood)) {
         return loadFrame(0);
     }
@@ -847,6 +871,11 @@ void notifyInteraction(Interaction interaction, uint32_t nowMs)
     (void)nowMs;
 }
 
+void setFrameIntervalMs(uint32_t intervalMs)
+{
+    g_frameIntervalMs = std::max<uint32_t>(1, intervalMs);
+}
+
 ImageFrame565View currentImageFrame(uint32_t nowMs)
 {
     if ((!SharedSd::isMounted() || !g_demoLoaded)
@@ -862,15 +891,15 @@ ImageFrame565View currentImageFrame(uint32_t nowMs)
     if (g_loadedFrameIndex == static_cast<size_t>(-1)) {
         if (!loadFrame(0)) {
             if (recoverOneShotToBaseFrame()) {
-                g_nextFrameMs = nowMs + AppConfig::kImageFrameIntervalMs;
+                g_nextFrameMs = nowMs + g_frameIntervalMs;
             } else {
                 return fallbackFrame();
             }
         } else {
-            g_nextFrameMs = nowMs + AppConfig::kImageFrameIntervalMs;
+            g_nextFrameMs = nowMs + g_frameIntervalMs;
         }
     } else if (g_nextFrameMs == 0) {
-        g_nextFrameMs = nowMs + AppConfig::kImageFrameIntervalMs;
+        g_nextFrameMs = nowMs + g_frameIntervalMs;
     } else if (nowMs >= g_nextFrameMs) {
         if (!g_oneShotActive && moodAllowsSpecial(g_requestedMood)) {
             if (g_nextSpecialMs == 0) {
@@ -880,9 +909,9 @@ ImageFrame565View currentImageFrame(uint32_t nowMs)
             }
         }
         if (advancePlaybackFrame(nowMs)) {
-            g_nextFrameMs = nowMs + AppConfig::kImageFrameIntervalMs;
+            g_nextFrameMs = nowMs + g_frameIntervalMs;
         } else {
-            g_nextFrameMs = nowMs + (AppConfig::kImageFrameIntervalMs * 2UL);
+            g_nextFrameMs = nowMs + (g_frameIntervalMs * 2UL);
         }
     }
 
@@ -899,6 +928,7 @@ ImageFrame565View currentImageFrame(uint32_t nowMs)
         view.canvasHeight = g_dynamicActive.canvasHeight;
         view.offsetX = g_dynamicActive.offsetX;
         view.offsetY = g_dynamicActive.offsetY;
+        view.scale = g_dynamicActive.scale;
         view.title = "FACE";
         view.detail = g_detail;
         return view;

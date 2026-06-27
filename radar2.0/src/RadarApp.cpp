@@ -825,7 +825,8 @@ void RadarApp::loop()
         } else if (dayClockView) {
             frameIntervalMs = kWatchFrameMs;
         } else if (imageView) {
-            frameIntervalMs = AppConfig::kImageFrameIntervalMs;
+            frameIntervalMs = frameIntervalMsForFps(m_runtimeConfig.gyroFps);
+            ImageSource::setFrameIntervalMs(frameIntervalMs);
         } else if (pomodoroView) {
             frameIntervalMs = kPomodoroFrameMs;
         } else if (skyView || alternativeClockView) {
@@ -1764,7 +1765,12 @@ void RadarApp::renderCurrentMode()
         ImageSource::setMood(faceMood);
         ImageFrame565View frame = ImageSource::currentImageFrame(millis());
         frame.detail = (faceStatus == "NORMAL") ? nullptr : faceStatus.c_str();
-        frame.screenOffsetY = frame.detail == nullptr ? 10 : 0;
+        const uint16_t frameScale = frame.scale > 0 ? frame.scale : 1;
+        const bool fullScreenImage = (static_cast<uint32_t>(frame.width) * frameScale) == AppConfig::kScreenWidth
+            && (static_cast<uint32_t>(frame.height) * frameScale) == AppConfig::kScreenHeight;
+        const bool fullScreenCanvas = frame.canvasWidth == AppConfig::kScreenWidth
+            && frame.canvasHeight == AppConfig::kScreenHeight;
+        frame.screenOffsetY = (frame.detail == nullptr && !fullScreenImage && !fullScreenCanvas) ? 10 : 0;
         String faceTime;
         if (frame.detail != nullptr) {
             const time_t now = time(nullptr);
@@ -2912,10 +2918,21 @@ void RadarApp::changeFpsStep(int delta)
 
 void RadarApp::changeGyroFpsStep(int delta)
 {
-    int current = static_cast<int>(m_runtimeConfig.gyroFps) + (delta * AppConfig::kFpsStep);
-    if (current > AppConfig::kMaxFps) current = AppConfig::kMinFps;
-    if (current < AppConfig::kMinFps) current = AppConfig::kMaxFps;
-    m_runtimeConfig.gyroFps = static_cast<uint8_t>(current);
+    constexpr uint8_t options[] = {7, 10, 15, 20, 25, 30, 35};
+    int index = 0;
+    for (int i = 0; i < static_cast<int>(sizeof(options)); ++i) {
+        if (m_runtimeConfig.gyroFps <= options[i]) {
+            index = i;
+            break;
+        }
+    }
+    index += delta;
+    if (index < 0) {
+        index = static_cast<int>(sizeof(options)) - 1;
+    } else if (index >= static_cast<int>(sizeof(options))) {
+        index = 0;
+    }
+    m_runtimeConfig.gyroFps = options[index];
     m_runtimeConfig.normalize();
     persistRuntimeConfig();
 }

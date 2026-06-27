@@ -6320,6 +6320,11 @@ void RadarRenderer::renderImageScreen(const ImageFrame565View& frame)
 
     const int screenW = static_cast<int>(m_width);
     const int screenH = static_cast<int>(m_height);
+    const int frameScale = (frame.width == 120 && frame.height == 120)
+        ? 4
+        : ((frame.width == 240 && frame.height == 240)
+            ? 2
+            : std::max(1, static_cast<int>(frame.scale)));
     clear();
 
     // ---- 1) Contenido de la imagen ----
@@ -6341,6 +6346,21 @@ void RadarRenderer::renderImageScreen(const ImageFrame565View& frame)
             blitImage565(0, dstY, frame.width, copyH,
                 frame.pixels + (srcY * static_cast<int>(frame.width)));
         }
+    } else if (frameScale > 1
+        && static_cast<int>(frame.width) * frameScale <= screenW
+        && static_cast<int>(frame.height) * frameScale <= screenH) {
+        const int canvasW = frame.canvasWidth > 0 ? static_cast<int>(frame.canvasWidth) : static_cast<int>(frame.width) * frameScale;
+        const int canvasH = frame.canvasHeight > 0 ? static_cast<int>(frame.canvasHeight) : static_cast<int>(frame.height) * frameScale;
+        const int scaledW = static_cast<int>(frame.width) * frameScale;
+        const int scaledH = static_cast<int>(frame.height) * frameScale;
+        int offX = ((screenW - canvasW) / 2) + static_cast<int>(frame.offsetX);
+        int offY = ((screenH - canvasH) / 2) + static_cast<int>(frame.offsetY)
+            + static_cast<int>(frame.screenOffsetY);
+        if (offX < 0 || offY < 0 || offX + scaledW > screenW || offY + scaledH > screenH) {
+            offX = (screenW - scaledW) / 2;
+            offY = (screenH - scaledH) / 2;
+        }
+        blitImage565Scaled(offX, offY, frame.width, frame.height, frameScale, frame.pixels);
     } else if (static_cast<int>(frame.width) <= screenW && static_cast<int>(frame.height) <= screenH) {
         const int canvasW = frame.canvasWidth > 0 ? static_cast<int>(frame.canvasWidth) : static_cast<int>(frame.width);
         const int canvasH = frame.canvasHeight > 0 ? static_cast<int>(frame.canvasHeight) : static_cast<int>(frame.height);
@@ -6480,6 +6500,67 @@ void RadarRenderer::blitImage565(int dstX, int dstY, int width, int height, cons
         }
 
         std::memcpy(&m_buffer[(destRow * m_width) + copyX], src + srcOffset, static_cast<size_t>(copyWidth) * sizeof(uint16_t));
+    }
+}
+
+void RadarRenderer::blitImage565Scaled(int dstX, int dstY, int width, int height, int scale, const uint16_t* src)
+{
+    if (m_buffer == nullptr || src == nullptr || width <= 0 || height <= 0 || scale <= 0) {
+        return;
+    }
+
+    if (scale == 1) {
+        blitImage565(dstX, dstY, width, height, src);
+        return;
+    }
+
+    if (dstX == 0 && dstY == 0
+        && width * scale == static_cast<int>(m_width)
+        && height * scale == static_cast<int>(m_height)) {
+        for (int row = 0; row < height; ++row) {
+            const uint16_t* srcRow = src + (row * width);
+            lv_color_t* firstDstRow = &m_buffer[(row * scale) * m_width];
+            int outX = 0;
+            for (int col = 0; col < width; ++col) {
+                const uint16_t pixel = srcRow[col];
+                for (int sx = 0; sx < scale; ++sx) {
+                    firstDstRow[outX++].full = pixel;
+                }
+            }
+            for (int sy = 1; sy < scale; ++sy) {
+                std::memcpy(firstDstRow + (sy * m_width), firstDstRow,
+                    static_cast<size_t>(m_width) * sizeof(lv_color_t));
+            }
+        }
+        return;
+    }
+
+    for (int row = 0; row < height; ++row) {
+        const uint16_t* srcRow = src + (row * width);
+        for (int sy = 0; sy < scale; ++sy) {
+            const int destRow = dstY + (row * scale) + sy;
+            if (destRow < 0 || destRow >= static_cast<int>(m_height)) {
+                continue;
+            }
+
+            lv_color_t* dstRow = &m_buffer[destRow * m_width];
+            for (int col = 0; col < width; ++col) {
+                const int destCol = dstX + (col * scale);
+                if (destCol >= static_cast<int>(m_width)) {
+                    break;
+                }
+                if (destCol + scale <= 0) {
+                    continue;
+                }
+                const uint16_t pixel = srcRow[col];
+                for (int sx = 0; sx < scale; ++sx) {
+                    const int x = destCol + sx;
+                    if (x >= 0 && x < static_cast<int>(m_width)) {
+                        dstRow[x].full = pixel;
+                    }
+                }
+            }
+        }
     }
 }
 

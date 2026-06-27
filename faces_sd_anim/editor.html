@@ -368,7 +368,7 @@ label { display: grid; gap: 6px; color: var(--muted); font-size: .83rem; }
         </div>
         <div class="triple">
           <label>FPS
-            <input id="fpsInput" type="number" min="1" max="60" value="10">
+            <input id="fpsInput" type="number" min="15" max="15" value="15" disabled>
           </label>
           <label>Canvas W
             <input id="canvasWInput" type="number" min="1" max="480" value="480">
@@ -392,12 +392,21 @@ label { display: grid; gap: 6px; color: var(--muted); font-size: .83rem; }
           <label>Offset Y
             <input id="offsetYInput" type="number" min="0" max="480">
           </label>
+          <label>Salida
+            <select id="outputScaleSelect">
+              <option value="1">480 real</option>
+              <option value="2" selected>240 guardado / 480 pintado</option>
+              <option value="4">120 guardado / 480 pintado</option>
+            </select>
+          </label>
+        </div>
+        <div class="row">
           <label>Frame seleccionado
             <input id="frameNameInput" placeholder="0.png">
           </label>
         </div>
         <p class="small">
-          Limite real del firmware: cada frame debe caber en 480x480 pixeles. Solo se escalan al importar si superan ese limite.
+          Limite real del firmware: cada frame debe caber en 480x480 pixeles. La salida 240/480 guarda 4 veces menos pixeles y el firmware los pinta x2.
         </p>
       </div>
     </section>
@@ -467,13 +476,37 @@ const HEADER_BYTES = 28;
 const ENTRY_BYTES = 20;
 const DEFAULT_CANVAS_W = 480;
 const DEFAULT_CANVAS_H = 480;
+const FIXED_FPS = 15;
 const MAX_PIXELS = 480 * 480;
+const FRAME_FLAG_SCALE_2X = 0x0001;
+const FRAME_FLAG_SCALE_4X = 0x0002;
 
 function fitWithinFirmwareLimit(width, height) {
   const scale = Math.min(1, 480 / width, 480 / height);
   return {
     width: Math.max(1, Math.round(width * scale)),
     height: Math.max(1, Math.round(height * scale))
+  };
+}
+
+function fitWithinBounds(width, height, maxWidth, maxHeight) {
+  const scale = Math.min(1, maxWidth / width, maxHeight / height);
+  return {
+    width: Math.max(1, Math.round(width * scale)),
+    height: Math.max(1, Math.round(height * scale))
+  };
+}
+
+function normalizedOutputScale(value) {
+  const scale = Number(value);
+  return scale === 4 ? 4 : (scale === 2 ? 2 : 1);
+}
+
+function encodedCanvasSize(canvasW, canvasH, outputScale) {
+  const scale = normalizedOutputScale(outputScale);
+  return {
+    width: Math.max(1, Math.floor(canvasW / scale)),
+    height: Math.max(1, Math.floor(canvasH / scale))
   };
 }
 const CATEGORY_PRESETS = [
@@ -521,6 +554,7 @@ const els = {
   frameH: $("frameHInput"),
   offsetX: $("offsetXInput"),
   offsetY: $("offsetYInput"),
+  outputScale: $("outputScaleSelect"),
   frameName: $("frameNameInput"),
   fileInput: $("fileInput"),
   cleanExport: $("cleanExportInput"),
@@ -596,7 +630,11 @@ function selectedAnimation() {
   return state.animations.find((anim) => anim.id === state.selectedAnim) || null;
 }
 
-function createAnimation(category = "normal", name = "animacion", frames = [], canvasW = DEFAULT_CANVAS_W, canvasH = DEFAULT_CANVAS_H, fps = 10) {
+function createAnimation(category = "normal", name = "animacion", frames = [], canvasW = DEFAULT_CANVAS_W, canvasH = DEFAULT_CANVAS_H, fps = FIXED_FPS, outputScale = 2) {
+  const scale = normalizedOutputScale(outputScale);
+  for (const frame of frames) {
+    frame.scale = normalizedOutputScale(frame.scale || scale);
+  }
   const anim = {
     id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random()),
     category: safeName(category),
@@ -604,7 +642,8 @@ function createAnimation(category = "normal", name = "animacion", frames = [], c
     frames,
     canvasW,
     canvasH,
-    fps
+    fps: FIXED_FPS,
+    outputScale: scale
   };
   state.animations.push(anim);
   state.selectedAnim = anim.id;
@@ -798,15 +837,16 @@ function renderAnimationList() {
 
 function renderMeta(anim) {
   const disabled = !anim;
-  for (const input of [els.category, els.name, els.fps, els.canvasW, els.canvasH, els.frameW, els.frameH, els.offsetX, els.offsetY, els.frameName, els.categoryPreset]) {
+  for (const input of [els.category, els.name, els.fps, els.canvasW, els.canvasH, els.frameW, els.frameH, els.offsetX, els.offsetY, els.outputScale, els.frameName, els.categoryPreset]) {
     input.disabled = disabled;
   }
   if (!anim) {
     els.category.value = "";
     els.name.value = "";
-    els.fps.value = 10;
+    els.fps.value = FIXED_FPS;
     els.canvasW.value = DEFAULT_CANVAS_W;
     els.canvasH.value = DEFAULT_CANVAS_H;
+    els.outputScale.value = "2";
     els.frameW.value = "";
     els.frameH.value = "";
     els.offsetX.value = "";
@@ -818,9 +858,10 @@ function renderMeta(anim) {
   els.category.value = anim.category;
   els.categoryPreset.value = CATEGORY_PRESETS.some((item) => item.id === anim.category) ? anim.category : "normal";
   els.name.value = anim.name;
-  els.fps.value = anim.fps;
+  els.fps.value = FIXED_FPS;
   els.canvasW.value = anim.canvasW;
   els.canvasH.value = anim.canvasH;
+  els.outputScale.value = normalizedOutputScale(anim.outputScale);
   const frame = anim.frames[state.selectedFrame];
   els.frameW.value = frame ? frame.width : "";
   els.frameH.value = frame ? frame.height : "";
@@ -901,7 +942,7 @@ function imageDataFromRgb565(bytes, width, height) {
   return imageData;
 }
 
-function makePreview(frame, canvasW, canvasH) {
+function canvasFromFrame(frame, canvasW, canvasH) {
   const main = document.createElement("canvas");
   main.width = canvasW;
   main.height = canvasH;
@@ -912,7 +953,14 @@ function makePreview(frame, canvasW, canvasH) {
   crop.width = frame.width;
   crop.height = frame.height;
   crop.getContext("2d").putImageData(imageDataFromRgb565(frame.pixels, frame.width, frame.height), 0, 0);
-  ctx.drawImage(crop, frame.offsetX, frame.offsetY);
+  const scale = normalizedOutputScale(frame.scale);
+  ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(crop, frame.offsetX, frame.offsetY, frame.width * scale, frame.height * scale);
+  return main;
+}
+
+function makePreview(frame, canvasW, canvasH) {
+  const main = canvasFromFrame(frame, canvasW, canvasH);
   return main.toDataURL("image/png");
 }
 
@@ -926,9 +974,11 @@ async function bitmapFromFile(file) {
   });
 }
 
-async function frameFromImageFile(file, canvasW, canvasH) {
+async function frameFromImageFile(file, canvasW, canvasH, outputScale = 2) {
   const bitmap = await bitmapFromFile(file);
-  const fitted = fitWithinFirmwareLimit(bitmap.width, bitmap.height);
+  const scale = normalizedOutputScale(outputScale);
+  const encodedCanvas = encodedCanvasSize(canvasW, canvasH, scale);
+  const fitted = fitWithinBounds(bitmap.width, bitmap.height, encodedCanvas.width, encodedCanvas.height);
   const width = fitted.width;
   const height = fitted.height;
   if (width * height > MAX_PIXELS) throw new Error(`${file.name}: frame demasiado grande`);
@@ -976,8 +1026,9 @@ async function frameFromImageFile(file, canvasW, canvasH) {
     name: file.name,
     width: cropW,
     height: cropH,
-    offsetX: Math.max(0, Math.floor((canvasW - width) / 2) + minX),
-    offsetY: Math.max(0, Math.floor((canvasH - height) / 2) + minY),
+    offsetX: Math.max(0, (Math.floor((encodedCanvas.width - width) / 2) + minX) * scale),
+    offsetY: Math.max(0, (Math.floor((encodedCanvas.height - height) / 2) + minY) * scale),
+    scale,
     pixels,
     previewUrl: ""
   };
@@ -985,8 +1036,10 @@ async function frameFromImageFile(file, canvasW, canvasH) {
   return frame;
 }
 
-function frameFromCanvas(sourceCanvas, name, canvasW, canvasH) {
-  const fitted = fitWithinFirmwareLimit(sourceCanvas.width, sourceCanvas.height);
+function frameFromCanvas(sourceCanvas, name, canvasW, canvasH, outputScale = 2) {
+  const scale = normalizedOutputScale(outputScale);
+  const encodedCanvas = encodedCanvasSize(canvasW, canvasH, scale);
+  const fitted = fitWithinBounds(sourceCanvas.width, sourceCanvas.height, encodedCanvas.width, encodedCanvas.height);
   const width = fitted.width;
   const height = fitted.height;
   const temp = document.createElement("canvas");
@@ -1030,8 +1083,9 @@ function frameFromCanvas(sourceCanvas, name, canvasW, canvasH) {
     name,
     width: cropW,
     height: cropH,
-    offsetX: Math.max(0, Math.floor((canvasW - width) / 2) + minX),
-    offsetY: Math.max(0, Math.floor((canvasH - height) / 2) + minY),
+    offsetX: Math.max(0, (Math.floor((encodedCanvas.width - width) / 2) + minX) * scale),
+    offsetY: Math.max(0, (Math.floor((encodedCanvas.height - height) / 2) + minY) * scale),
+    scale,
     pixels,
     previewUrl: ""
   };
@@ -1146,7 +1200,7 @@ function gifRows(height, interlaced) {
   return rows;
 }
 
-async function framesFromGifFile(file, canvasW, canvasH) {
+async function framesFromGifFile(file, canvasW, canvasH, outputScale = 2) {
   const bytes = new Uint8Array(await file.arrayBuffer());
   const header = String.fromCharCode(...bytes.slice(0, 6));
   if (header !== "GIF87a" && header !== "GIF89a") throw new Error(`${file.name}: GIF no valido`);
@@ -1236,7 +1290,7 @@ async function framesFromGifFile(file, canvasW, canvasH) {
       }
     }
     ctx.putImageData(image, 0, 0);
-    frames.push(frameFromCanvas(canvas, `${file.name}_${String(frames.length).padStart(3, "0")}`, canvasW, canvasH));
+    frames.push(frameFromCanvas(canvas, `${file.name}_${String(frames.length).padStart(3, "0")}`, canvasW, canvasH, outputScale));
 
     if (gce.disposal === 2) {
       ctx.clearRect(left, top, frameW, frameH);
@@ -1249,11 +1303,11 @@ async function framesFromGifFile(file, canvasW, canvasH) {
   return frames;
 }
 
-async function framesFromAnyImageFile(file, canvasW, canvasH) {
+async function framesFromAnyImageFile(file, canvasW, canvasH, outputScale = 2) {
   if (/\.gif$/i.test(file.name)) {
-    return await framesFromGifFile(file, canvasW, canvasH);
+    return await framesFromGifFile(file, canvasW, canvasH, outputScale);
   }
-  return [await frameFromImageFile(file, canvasW, canvasH)];
+  return [await frameFromImageFile(file, canvasW, canvasH, outputScale)];
 }
 
 function decodeAnimFile(file, category, name) {
@@ -1265,7 +1319,7 @@ function decodeAnimFile(file, category, name) {
     const flags = view.getUint16(10, true);
     const canvasW = view.getUint16(12, true);
     const canvasH = view.getUint16(14, true);
-    const fps = view.getUint16(16, true) || 10;
+    const fps = FIXED_FPS;
     const frameCount = view.getUint16(18, true);
     const tableOffset = view.getUint32(20, true);
     if (headerBytes < HEADER_BYTES || (flags & 1) === 0 || !canvasW || !canvasH || !frameCount) {
@@ -1280,6 +1334,7 @@ function decodeAnimFile(file, category, name) {
       const height = view.getUint16(pos + 10, true);
       const offsetX = view.getUint16(pos + 12, true);
       const offsetY = view.getUint16(pos + 14, true);
+      const frameFlags = view.getUint16(pos + 18, true);
       const pixels = new Uint8Array(width * height * 2);
       let out = 0;
       for (let p = dataOffset; p < dataOffset + dataSize; p += 4) {
@@ -1290,11 +1345,17 @@ function decodeAnimFile(file, category, name) {
           pixels[out++] = value >> 8;
         }
       }
-      const frame = { name: `${i}`, width, height, offsetX, offsetY, pixels, previewUrl: "" };
+      const frameScale = (frameFlags & FRAME_FLAG_SCALE_4X) || (width === 120 && height === 120)
+        ? 4
+        : (((frameFlags & FRAME_FLAG_SCALE_2X) || (width === 240 && height === 240)) ? 2 : 1);
+      const frame = { name: `${i}`, width, height, offsetX, offsetY, scale: frameScale, pixels, previewUrl: "" };
       frame.previewUrl = makePreview(frame, canvasW, canvasH);
       frames.push(frame);
     }
-    return createAnimation(category, name, frames, canvasW, canvasH, fps);
+    const outputScale = frames.some((frame) => normalizedOutputScale(frame.scale) === 4)
+      ? 4
+      : (frames.some((frame) => normalizedOutputScale(frame.scale) === 2) ? 2 : 1);
+    return createAnimation(category, name, frames, canvasW, canvasH, fps, outputScale);
   });
 }
 
@@ -1312,13 +1373,13 @@ function buildAnimBlob(anim) {
   view.setUint16(10, 1, true);
   view.setUint16(12, anim.canvasW, true);
   view.setUint16(14, anim.canvasH, true);
-  view.setUint16(16, Math.max(1, Math.min(60, Number(anim.fps) || 10)), true);
+  view.setUint16(16, FIXED_FPS, true);
   view.setUint16(18, frames.length, true);
   view.setUint32(20, HEADER_BYTES, true);
   view.setUint32(24, 0, true);
 
   let cursor = dataOffset;
-  const delay = Math.max(1, Math.round(1000 / Math.max(1, Number(anim.fps) || 10)));
+  const delay = Math.round(1000 / FIXED_FPS);
   frames.forEach((frame, index) => {
     const pos = HEADER_BYTES + index * ENTRY_BYTES;
     const payload = payloads[index];
@@ -1329,7 +1390,10 @@ function buildAnimBlob(anim) {
     view.setUint16(pos + 12, frame.offsetX, true);
     view.setUint16(pos + 14, frame.offsetY, true);
     view.setUint16(pos + 16, delay, true);
-    view.setUint16(pos + 18, 0, true);
+    const frameScale = normalizedOutputScale(frame.scale || anim.outputScale);
+    view.setUint16(pos + 18,
+      frameScale === 4 ? FRAME_FLAG_SCALE_4X : (frameScale === 2 ? FRAME_FLAG_SCALE_2X : 0),
+      true);
     bytes.set(payload, cursor);
     cursor += payload.length;
   });
@@ -1447,7 +1511,7 @@ async function importFolder() {
     const parts = dir ? dir.split("/") : [];
     const category = parts.length >= 2 ? parts[parts.length - 2] : (parts[0] || "normal");
     const name = parts.length ? parts[parts.length - 1] : handle.name;
-    const anim = createAnimation(category, name, [], DEFAULT_CANVAS_W, DEFAULT_CANVAS_H, 10);
+    const anim = createAnimation(category, name, [], DEFAULT_CANVAS_W, DEFAULT_CANVAS_H, FIXED_FPS, 2);
     group.sort((a, b) => naturalCompare(a.path.at(-1), b.path.at(-1)));
     for (const entry of group) {
       const file = await entry.handle.getFile();
@@ -1481,14 +1545,15 @@ async function importAnimationFolder() {
   const name = safeName(handle.name || "animacion");
   const canvasW = Number(els.canvasW.value) || current?.canvasW || DEFAULT_CANVAS_W;
   const canvasH = Number(els.canvasH.value) || current?.canvasH || DEFAULT_CANVAS_H;
-  const fps = Number(els.fps.value) || current?.fps || 10;
+  const fps = FIXED_FPS;
+  const outputScale = normalizedOutputScale(els.outputScale.value || current?.outputScale || 2);
   const frames = [];
   for (const entry of files) {
     const file = await entry.handle.getFile();
-    frames.push(...await framesFromAnyImageFile(file, canvasW, canvasH));
+    frames.push(...await framesFromAnyImageFile(file, canvasW, canvasH, outputScale));
   }
 
-  const anim = createAnimation(category, name, frames, canvasW, canvasH, fps);
+  const anim = createAnimation(category, name, frames, canvasW, canvasH, fps, outputScale);
   state.selectedAnim = anim.id;
   state.selectedFrame = Math.floor(anim.frames.length / 2);
   state.categoryFilter = "";
@@ -1554,7 +1619,7 @@ async function handlePickedFiles(files) {
       continue;
     }
     if (!/\.(png|jpe?g|bmp|webp|gif)$/i.test(file.name) && !file.type.startsWith("image/")) continue;
-    frames.push(...await framesFromAnyImageFile(file, anim.canvasW, anim.canvasH));
+    frames.push(...await framesFromAnyImageFile(file, anim.canvasW, anim.canvasH, anim.outputScale));
   }
   const index = Math.max(0, Math.min(anim.frames.length, state.selectedFrame + (state.insertMode === "after" ? 1 : 0)));
   anim.frames.splice(index, 0, ...frames);
@@ -1629,20 +1694,53 @@ function play() {
     renderFrames(anim);
     renderStage(anim);
     renderMeta(anim);
-  }, Math.max(30, Math.round(1000 / Math.max(1, Number(anim.fps) || 10))));
+  }, Math.round(1000 / FIXED_FPS));
 }
 
-function updateAnimMeta() {
+function clampCanvasValue(value, fallback) {
+  return Math.max(1, Math.min(480, Number(value) || fallback));
+}
+
+function convertAnimationOutput(anim, newCanvasW, newCanvasH, newScale) {
+  const oldCanvasW = anim.canvasW;
+  const oldCanvasH = anim.canvasH;
+  const oldScale = normalizedOutputScale(anim.outputScale);
+  anim.fps = FIXED_FPS;
+  anim.canvasW = newCanvasW;
+  anim.canvasH = newCanvasH;
+  anim.outputScale = newScale;
+  for (let i = 0; i < anim.frames.length; i++) {
+    let frame = anim.frames[i];
+    if (newScale !== oldScale || newCanvasW !== oldCanvasW || newCanvasH !== oldCanvasH) {
+      const fullCanvas = canvasFromFrame(frame, oldCanvasW, oldCanvasH);
+      frame = frameFromCanvas(fullCanvas, frame.name, anim.canvasW, anim.canvasH, newScale);
+      anim.frames[i] = frame;
+    } else {
+      frame.scale = normalizedOutputScale(frame.scale || anim.outputScale);
+      frame.previewUrl = makePreview(frame, anim.canvasW, anim.canvasH);
+    }
+  }
+}
+
+function updateSelectedIdentityMeta() {
   const anim = selectedAnimation();
   if (!anim) return;
   anim.category = safeName(els.category.value);
   anim.name = safeName(els.name.value);
-  anim.fps = Math.max(1, Math.min(60, Number(els.fps.value) || 10));
-  anim.canvasW = Math.max(1, Math.min(480, Number(els.canvasW.value) || DEFAULT_CANVAS_W));
-  anim.canvasH = Math.max(1, Math.min(480, Number(els.canvasH.value) || DEFAULT_CANVAS_H));
-  for (const frame of anim.frames) {
-    frame.previewUrl = makePreview(frame, anim.canvasW, anim.canvasH);
+  render();
+}
+
+function updateGlobalOutputMeta() {
+  const newCanvasW = clampCanvasValue(els.canvasW.value, DEFAULT_CANVAS_W);
+  const newCanvasH = clampCanvasValue(els.canvasH.value, DEFAULT_CANVAS_H);
+  const newScale = normalizedOutputScale(els.outputScale.value);
+  for (const anim of state.animations) {
+    convertAnimationOutput(anim, newCanvasW, newCanvasH, newScale);
   }
+  const scaleLabel = newScale === 4
+    ? "120 guardado / 480 pintado"
+    : (newScale === 2 ? "240 guardado / 480 pintado" : "480 real");
+  setStatus(`Aplicado a todas: ${scaleLabel}, ${newCanvasW}x${newCanvasH}, ${FIXED_FPS} FPS.`, "ok");
   render();
 }
 
@@ -1653,6 +1751,7 @@ function updateFrameMeta() {
   frame.name = els.frameName.value || frame.name;
   frame.offsetX = Math.max(0, Math.min(480, Number(els.offsetX.value) || 0));
   frame.offsetY = Math.max(0, Math.min(480, Number(els.offsetY.value) || 0));
+  frame.scale = normalizedOutputScale(frame.scale || anim.outputScale);
   frame.previewUrl = makePreview(frame, anim.canvasW, anim.canvasH);
   render();
 }
@@ -1664,7 +1763,18 @@ $("importFilesBtn").onclick = () => addFilesAt("after");
 $("addBeforeBtn").onclick = () => addFilesAt("before");
 $("addAfterBtn").onclick = () => addFilesAt("after");
 $("exportBtn").onclick = () => exportFaces().catch((err) => setStatus(err.message || err, "bad"));
-$("newAnimBtn").onclick = () => { createAnimation("normal", "nueva_animacion"); render(); };
+$("newAnimBtn").onclick = () => {
+  createAnimation(
+    els.category.value || "normal",
+    els.name.value || "nueva_animacion",
+    [],
+    Number(els.canvasW.value) || DEFAULT_CANVAS_W,
+    Number(els.canvasH.value) || DEFAULT_CANVAS_H,
+    FIXED_FPS,
+    normalizedOutputScale(els.outputScale.value)
+  );
+  render();
+};
 $("showAllBtn").onclick = () => { state.categoryFilter = ""; render(); };
 $("moveCategoryBtn").onclick = () => {
   const anim = selectedAnimation();
@@ -1699,7 +1809,8 @@ $("duplicateFrameBtn").onclick = () => {
 };
 
 els.fileInput.onchange = (ev) => handlePickedFiles(ev.target.files).catch((err) => setStatus(err.message || err, "bad"));
-for (const input of [els.category, els.name, els.fps, els.canvasW, els.canvasH]) input.onchange = updateAnimMeta;
+for (const input of [els.category, els.name]) input.onchange = updateSelectedIdentityMeta;
+for (const input of [els.fps, els.canvasW, els.canvasH, els.outputScale]) input.onchange = updateGlobalOutputMeta;
 for (const input of [els.offsetX, els.offsetY, els.frameName]) input.onchange = updateFrameMeta;
 
 const dropzone = $("dropzone");

@@ -315,7 +315,7 @@ bool ConfigStore::saveToSd(const RuntimeConfig& config) const
 bool ConfigStore::loadFromNvs(RuntimeConfig& config) const
 {
     Preferences prefs;
-    if (!prefs.begin(AppConfig::kConfigNamespace, true)) {
+    if (!prefs.begin(AppConfig::kConfigNamespace, false)) {
         return false;
     }
 
@@ -360,6 +360,13 @@ bool ConfigStore::loadFromNvs(RuntimeConfig& config) const
     config.apiRefreshSeconds = static_cast<uint8_t>(prefs.getUChar("api_refresh", AppConfig::kDefaultApiRefreshSeconds));
     config.fps = static_cast<uint8_t>(prefs.getUChar("fps", AppConfig::kDefaultFps));
     config.gyroFps = static_cast<uint8_t>(prefs.getUChar("gyro_fps", AppConfig::kDefaultGyroFps));
+    if (!prefs.getBool("gyro10_mig", false)) {
+        if (config.gyroFps == AppConfig::kDefaultFps) {
+            config.gyroFps = AppConfig::kDefaultGyroFps;
+            prefs.putUChar("gyro_fps", config.gyroFps);
+        }
+        prefs.putBool("gyro10_mig", true);
+    }
     config.viewRadarEnabled = prefs.getBool("v_radar", true);
     config.viewSkyEnabled = prefs.getBool("v_sky", true);
     config.viewWatchEnabled = prefs.getBool("v_watch", false);

@@ -139,7 +139,7 @@ struct RuntimeConfig
         }
 
         fps = normalizeFps(fps);
-        gyroFps = normalizeFps(gyroFps);
+        gyroFps = normalizeGyroFps(gyroFps);
 
         if (!viewRadarEnabled && !viewSkyEnabled && !viewWatchEnabled && !viewClockEnabled
             && !viewAlternativeClockEnabled && !viewDayClockEnabled && !viewOptionsEnabled
@@ -165,6 +165,21 @@ struct RuntimeConfig
         const uint8_t fpsSteps = static_cast<uint8_t>(
             roundf(static_cast<float>(value - AppConfig::kMinFps) / static_cast<float>(AppConfig::kFpsStep)));
         return AppConfig::kMinFps + (fpsSteps * AppConfig::kFpsStep);
+    }
+
+    static uint8_t normalizeGyroFps(uint8_t value)
+    {
+        constexpr uint8_t options[] = {7, 10, 15, 20, 25, 30, 35};
+        uint8_t best = options[0];
+        uint8_t bestDistance = value > best ? value - best : best - value;
+        for (uint8_t option : options) {
+            const uint8_t distance = value > option ? value - option : option - value;
+            if (distance < bestDistance) {
+                best = option;
+                bestDistance = distance;
+            }
+        }
+        return best;
     }
 
     static uint8_t normalizeChoice(uint8_t value, uint8_t fallback,
