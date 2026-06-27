@@ -149,6 +149,7 @@ private:
     void renderDragonBallRadar(const RadarModel& model, bool wifiConnected, bool wifiConfigured, bool apiFetchPending, bool wifiNoWarningVisible, bool apiNoWarningVisible);
     void rebuildDragonBallBlips(const RadarModel& model);
     void blitImage565(int dstX, int dstY, int width, int height, const uint16_t* src);
+    void blitImage565Scaled(int dstX, int dstY, int width, int height, int scale, const uint16_t* src);
     void blitCroppedImage565(int dstX, int dstY, int width, int height, const uint16_t* src, int srcWidth, int srcHeight, int srcX, int srcY);
     void blitTransformedImage565(int dstX, int dstY, int width, int height, const uint16_t* src, int srcWidth, int srcHeight, float offsetX, float offsetY, float rotationRad);
     void blitTransformedImage565Masked(int dstX, int dstY, int width, int height, const uint16_t* src, int srcWidth, int srcHeight, float offsetX, float offsetY, float rotationRad, const uint16_t* rowStart, const uint16_t* rowEnd);

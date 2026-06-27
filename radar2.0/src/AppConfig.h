@@ -47,7 +47,7 @@ inline constexpr uint32_t kFrameIntervalMs = 40;
 inline constexpr uint32_t kPortalRenderMs = 250;
 inline constexpr uint32_t kTouchLongPressMs = 900;
 inline constexpr uint32_t kTouchPollIntervalMs = 20;
-inline constexpr uint32_t kImageFrameIntervalMs = 100;
+inline constexpr uint32_t kImageFrameIntervalMs = 67;
 inline constexpr uint32_t kRadarLoopMaxSleepMs = 12;
 inline constexpr uint32_t kPopupLoopMaxSleepMs = 8;
 inline constexpr uint32_t kRadarStatusOverlayMs = 1600;
@@ -125,12 +125,13 @@ inline constexpr uint32_t kDragonBallTotalActiveMs = kDragonBallTotalWaveMs + kD
 inline constexpr uint8_t kMaxBrightness = 100;
 inline constexpr uint8_t kDefaultBrightness = 100;
 inline constexpr uint8_t kMinFps = 15;
+inline constexpr uint8_t kMinGyroFps = 7;
 inline constexpr uint8_t kMaxFps = 35;
 inline constexpr uint8_t kFpsStep = 5;
 // 15 FPS por defecto para reducir carga y mantener el tactil mas reactivo.
 // Sigue disponible subirlo en Opciones durante la sesion si se quiere mas suavidad.
 inline constexpr uint8_t kDefaultFps = 15;
-inline constexpr uint8_t kDefaultGyroFps = kDefaultFps;
+inline constexpr uint8_t kDefaultGyroFps = 10;
 inline constexpr bool kStartupAnimationEnabled = true;
 inline constexpr uint32_t kStartupAnimationMs = 6'000;
 inline constexpr uint8_t kStartupAnimationFps = kMaxFps;

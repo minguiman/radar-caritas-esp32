@@ -21,6 +21,7 @@ struct ImageFrame565View
     uint16_t canvasHeight = 0;
     uint16_t offsetX = 0;
     uint16_t offsetY = 0;
+    uint8_t scale = 1;
     const char* title = nullptr;
     const char* detail = nullptr;
     const char* timeLabel = nullptr;
@@ -66,5 +67,6 @@ void end();
 void setMood(Mood mood);
 void playMoment(Moment moment, uint32_t nowMs);
 void notifyInteraction(Interaction interaction, uint32_t nowMs);
+void setFrameIntervalMs(uint32_t intervalMs);
 ImageFrame565View currentImageFrame(uint32_t nowMs);
 }
